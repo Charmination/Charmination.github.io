@@ -1,373 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aquarium Site</title>
 
-<style>
-:root{--teal:#0abab5;--aqua:#87ffdd;--custard:#fcf4af;}
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;background:#097a77;}
-.scene{display:flex;flex-direction:column;width:100%;min-height:100vh;font-family:'Press Start 2P',monospace;background:#097a77;}
-.lamp-btn{position:absolute;top:14px;right:18px;z-index:20;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.lamp-head{width:54px;height:36px;border-radius:50% 50% 0 0;background:linear-gradient(160deg,#ffe066 30%,#ffb830 100%);border:3px solid #c8960a;transition:background .3s;}
-.lamp-head.off{background:linear-gradient(160deg,#b0aead 30%,#888 100%);border-color:#666;}
-.lamp-body{width:9px;height:26px;background:#b0aead;border-radius:3px;border:2px solid #888;}
-.lamp-base{width:34px;height:11px;background:#c8c8c8;border-radius:5px;border:2px solid #aaa;}
-.lamp-glow{position:absolute;top:-14px;left:-18px;width:90px;height:68px;background:radial-gradient(ellipse,rgba(255,224,80,.38) 30%,transparent 80%);pointer-events:none;transition:opacity .4s;}
-.lamp-glow.off{opacity:0;}
-.lamp-label{font-size:11px;color:#888;letter-spacing:2px;margin-top:2px;}
-
-.tank-wrap{position:relative;flex:1;min-height:0;border:4px solid rgba(255,255,255,.5);border-radius:18px 18px 10px 10px;margin:8px 8px 0 8px;overflow:hidden;background:linear-gradient(180deg,#c2fff0 0%,#87ffdd 20%,#0abab5 65%,#097a77 100%);transition:background .6s;}
-.tank-wrap.dark-mode{background:linear-gradient(180deg,#053a35 0%,#032e2b 45%,#021a18 100%);}
-
-.tank-title-bar{position:relative;z-index:10;text-align:center;padding:14px 0 11px;background:rgba(252,244,175,.18);border-bottom:3px solid rgba(255,255,255,.28);}
-.tank-title-bar span{font-family:'Press Start 2P',monospace;font-size:clamp(14px,2.4vw,26px);color:#fcf4af;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,80,60,.6);}
-.shimmer{position:absolute;top:0;left:0;right:0;height:28px;background:linear-gradient(180deg,rgba(255,255,255,.4) 0%,transparent 100%);pointer-events:none;z-index:3;}
-.bubbles{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;}
-.bubble{position:absolute;border-radius:50%;background:rgba(255,255,255,.35);border:1.5px solid rgba(255,255,255,.65);animation:rise linear infinite;}
-@keyframes rise{0%{transform:translateY(0) scale(1);opacity:.7}80%{opacity:.4}100%{transform:translateY(-100vh) scale(.4);opacity:0}}
-.tank-wrap.dark-mode .bubble{animation-play-state:paused;opacity:0;transition:opacity .5s;}
-
-.fish-area{position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;}
-.fish{position:absolute;cursor:pointer;image-rendering:pixelated;z-index:6;}
-.fish:hover{filter:brightness(1.25) drop-shadow(0 0 10px rgba(255,255,255,.9));}
-.fish canvas{display:block;image-rendering:pixelated;}
-.fish.asleep{filter:brightness(.5) saturate(.4);}
-.fish.asleep:hover{filter:brightness(.75) saturate(.7);}
-.zzz{position:absolute;top:-22px;right:-4px;font-size:10px;color:#87ffdd;font-family:'Press Start 2P',monospace;pointer-events:none;display:none;animation:zzzf 2s ease-in-out infinite;}
-.fish.asleep .zzz{display:block;}
-@keyframes zzzf{0%{transform:translateY(0) scale(.8);opacity:.8}60%{transform:translateY(-8px) scale(1);opacity:1}100%{transform:translateY(-16px) scale(.7);opacity:0}}
-.fish-label{position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:rgba(7,50,46,.88);color:#fcf4af;font-size:clamp(7px,1vw,10px);padding:5px 10px;border-radius:5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s;font-family:'Press Start 2P',monospace;z-index:100;border:1.5px solid rgba(135,255,221,.4);}
-.fish:hover .fish-label{opacity:1;}
-
-.nav-popup{display:none;position:fixed;z-index:9999;background:rgba(7,90,85,.97);border:2.5px solid var(--aqua);border-radius:12px;padding:14px 18px;min-width:clamp(160px,20vw,220px);box-shadow:0 6px 28px rgba(10,186,181,.55);font-family:'Press Start 2P',monospace;pointer-events:auto;}
-.nav-popup.show{display:block;}
-.nav-popup-title{font-size:clamp(8px,1.1vw,11px);color:var(--aqua);margin-bottom:10px;letter-spacing:1px;}
-.nav-link{display:block;padding:8px 0;font-size:clamp(7px,1vw,10px);color:#fcf4af;text-decoration:none;border-bottom:1px solid rgba(135,255,221,.18);cursor:pointer;transition:color .15s;}
-.nav-link:last-child{border-bottom:none;}
-.nav-link:hover{color:#87ffdd;}
-.social-links{display:flex;flex-direction:column;gap:7px;margin-top:4px;}
-.social-link{display:block;padding:8px 11px;font-size:clamp(7px,1vw,10px);color:#fcf4af;text-decoration:none;border:2px solid rgba(135,255,221,.3);border-radius:6px;cursor:pointer;transition:background .15s;background:rgba(135,255,221,.07);}
-.social-link:hover{background:rgba(135,255,221,.2);border-color:var(--aqua);}
-
-.overlay-base{display:none;position:absolute;z-index:9999;width:clamp(240px,52%,400px);background:linear-gradient(145deg,#5a300a,#7a4a1e);border:3px solid #c8843a;border-radius:14px;padding:clamp(12px,2vw,20px) clamp(14px,2.2vw,22px);font-family:'Press Start 2P',monospace;box-shadow:0 8px 32px rgba(0,0,0,.58);}
-.overlay-base.show{display:block;}
-.ov-title{font-size:clamp(9px,1.3vw,13px);color:#FFD700;margin-bottom:12px;text-align:center;letter-spacing:1px;text-shadow:0 1px 5px rgba(0,0,0,.5);}
-.ov-label{font-size:clamp(7px,1vw,10px);color:#c8843a;margin-bottom:4px;display:block;}
-.ov-input{width:100%;font-family:'Press Start 2P',monospace;font-size:clamp(7px,1vw,10px);background:rgba(200,132,58,.15);border:2px solid #c8843a;border-radius:6px;padding:8px 10px;color:#fcf4af;margin-bottom:10px;outline:none;resize:vertical;}
-.ov-input::placeholder{color:rgba(200,132,58,.5);}
-.ov-input:focus{border-color:#FFD700;background:rgba(200,132,58,.25);}
-.ov-btn{width:100%;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.2vw,12px);background:#c87820;color:#FFD700;border:2.5px solid #FFD700;border-radius:7px;padding:10px;cursor:pointer;box-shadow:0 4px 0 #3d1e00;transition:transform .1s;letter-spacing:1px;}
-.ov-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #3d1e00;}
-.ov-close{position:absolute;top:9px;right:12px;font-size:clamp(9px,1.3vw,13px);color:#c8843a;cursor:pointer;background:none;border:none;font-family:'Press Start 2P',monospace;}
-.ov-close:hover{color:#FFD700;}
-.gal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;}
-.gal-slot{aspect-ratio:1;background:rgba(135,255,221,.1);border:2px solid rgba(135,255,221,.28);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:clamp(6px,.9vw,8px);color:rgba(135,255,221,.55);text-align:center;overflow:hidden;}
-.gal-slot img{width:100%;height:100%;object-fit:cover;border-radius:5px;}
-.gal-note{font-size:clamp(6px,.8vw,8px);color:rgba(135,255,221,.4);text-align:center;margin-top:8px;}
-.clam-soon{display:none;position:absolute;z-index:9999;width:clamp(220px,44%,340px);background:linear-gradient(145deg,#2a0a4a,#4a1a7a);border:3px solid #cc88ff;border-radius:14px;padding:18px 20px;font-family:'Press Start 2P',monospace;box-shadow:0 8px 32px rgba(80,0,120,.6);text-align:center;}
-.clam-soon.show{display:block;}
-.clam-soon-title{font-size:clamp(10px,1.5vw,15px);color:#e8b0ff;margin-bottom:10px;letter-spacing:1px;}
-.clam-soon-body{font-size:clamp(8px,1.1vw,11px);color:#cc88ff;line-height:2;}
-.clam-soon-close{position:absolute;top:9px;right:12px;font-size:clamp(9px,1.3vw,13px);color:#cc88ff;cursor:pointer;background:none;border:none;font-family:'Press Start 2P',monospace;}
-
-.bottom-bar{display:flex;flex-direction:column;align-items:center;padding:8px 0 9px;background:#097a77;flex-shrink:0;}
-.feed-btn{font-family:'Press Start 2P',monospace;font-size:clamp(11px,1.6vw,18px);background:#c87820;color:#FFD700;border:4px solid #c8843a;border-radius:10px;padding:11px clamp(18px,2.8vw,36px);cursor:pointer;letter-spacing:2px;box-shadow:0 5px 0 #3d1e00;transition:transform .1s;}
-.feed-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #3d1e00;}
-.tank-hint{font-family:'Press Start 2P',monospace;font-size:clamp(7px,1vw,10px);color:#87ffdd;margin-top:5px;letter-spacing:.4px;opacity:.85;text-align:center;}
-.hint-sleep{display:none;}
-.dark-hint .hint-awake{display:none;}
-.dark-hint .hint-sleep{display:inline;}
-
-.heart{position:absolute;font-size:16px;pointer-events:none;z-index:600;animation:heartrise 1.6s ease-out forwards;}
-@keyframes heartrise{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-70px) scale(.4);opacity:0}}
-.ty-msg{position:absolute;font-family:'Press Start 2P',monospace;font-size:clamp(7px,1vw,10px);color:#FF82C2;background:rgba(255,255,255,.93);border:2px solid #FF82C2;border-radius:8px;padding:5px 10px;pointer-events:none;z-index:600;white-space:nowrap;animation:fadeup 2.2s ease-out forwards;}
-@keyframes fadeup{0%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0;transform:translateY(-45px)}}
-</style>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
-<div class="scene" id="scene">
-  <button class="lamp-btn" id="lampBtn" aria-label="Toggle light/dark mode">
+<style>
+/* =========================
+   VARIABLES + BASE RESET
+========================= */
+:root{
+  --teal:#0abab5;
+  --aqua:#87ffdd;
+  --custard:#fcf4af;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+html,body{
+  width:100%;
+  background:#097a77;
+}
+
+/* =========================
+   LAYOUT CONTAINER
+========================= */
+.scene{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  min-height:100vh;
+  font-family:'Press Start 2P', monospace;
+}
+
+/* =========================
+   LAMP TOGGLE
+========================= */
+.lamp-btn{position:absolute;top:14px;right:18px;z-index:20;background:none;border:none;cursor:pointer;}
+.lamp-head{width:54px;height:36px;border-radius:50% 50% 0 0;background:linear-gradient(160deg,#ffe066,#ffb830);}
+.lamp-head.off{background:linear-gradient(160deg,#b0aead,#888);}
+.lamp-glow{position:absolute;top:-14px;left:-18px;width:90px;height:68px;background:radial-gradient(circle,rgba(255,224,80,.4),transparent);}
+.lamp-glow.off{opacity:0;}
+
+/* =========================
+   TANK
+========================= */
+.tank-wrap{
+  position:relative;
+  flex:1;
+  border:4px solid rgba(255,255,255,.5);
+  overflow:hidden;
+  background:linear-gradient(180deg,#c2fff0,#0abab5,#097a77);
+}
+
+.tank-wrap.dark-mode{
+  background:linear-gradient(180deg,#053a35,#021a18);
+}
+
+/* =========================
+   FISH AREA
+========================= */
+.fish-area{
+  position:absolute;
+  inset:0;
+  z-index:5;
+}
+
+.fish{
+  position:absolute;
+  cursor:pointer;
+}
+
+.fish canvas{
+  display:block;
+}
+
+.fish-label{
+  position:absolute;
+  bottom:110%;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.7);
+  color:#fcf4af;
+  font-size:10px;
+  padding:4px 8px;
+  opacity:0;
+}
+
+.fish:hover .fish-label{opacity:1;}
+
+.zzz{display:none;position:absolute;top:-20px;font-size:10px;}
+.fish.asleep .zzz{display:block;}
+
+/* =========================
+   NAV POPUPS
+========================= */
+.nav-popup{
+  display:none;
+  position:fixed;
+  z-index:999;
+  background:#075a55;
+  border:2px solid var(--aqua);
+  padding:12px;
+}
+
+.nav-popup.show{display:block;}
+
+/* =========================
+   OVERLAYS
+========================= */
+.overlay-base{
+  display:none;
+  position:absolute;
+  z-index:999;
+  background:#5a300a;
+  padding:16px;
+}
+
+.overlay-base.show{display:block;}
+
+/* =========================
+   BOTTOM BAR
+========================= */
+.bottom-bar{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:10px;
+}
+
+.feed-btn{
+  padding:10px 20px;
+  background:#c87820;
+  border:3px solid #c8843a;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="scene">
+
+  <!-- =========================
+       LAMP
+  ========================== -->
+  <button class="lamp-btn" id="lampBtn">
     <div class="lamp-glow" id="lampGlow"></div>
     <div class="lamp-head" id="lampHead"></div>
-    <div class="lamp-body"></div>
-    <div class="lamp-base"></div>
-    <span class="lamp-label" id="lampLabel">ON</span>
   </button>
 
+  <!-- =========================
+       TANK
+  ========================== -->
   <div class="tank-wrap" id="tank">
-    <div class="tank-title-bar" id="titleBar"><span>Bonnie Peng's Aquarium</span></div>
-    <div class="shimmer"></div>
-    <div class="bubbles" id="bubbles"></div>
+
     <div class="fish-area" id="fishArea">
-      <div class="fish" id="fishBetta"><canvas id="bettaCanvas"></canvas><div class="zzz">z z z</div><div class="fish-label">Projects</div></div>
-      <div class="fish" id="fishOranda"><canvas id="orandaCanvas"></canvas><div class="zzz">z z z</div><div class="fish-label">About</div></div>
-      <div class="fish" id="fishPleco"><canvas id="plecoCanvas"></canvas><div class="zzz">z z z</div><div class="fish-label">Socials</div></div>
+
+      <!-- FISH -->
+      <div class="fish" id="fishBetta">
+        <canvas id="bettaCanvas"></canvas>
+        <div class="zzz">z z z</div>
+        <div class="fish-label">Projects</div>
+      </div>
+
+      <div class="fish" id="fishOranda">
+        <canvas id="orandaCanvas"></canvas>
+        <div class="zzz">z z z</div>
+        <div class="fish-label">About</div>
+      </div>
+
+      <div class="fish" id="fishPleco">
+        <canvas id="plecoCanvas"></canvas>
+        <div class="zzz">z z z</div>
+        <div class="fish-label">Socials</div>
+      </div>
+
+      <!-- OVERLAYS (content sections) -->
+      <section id="about"><h1>About Me</h1></section>
+      <section id="resume"><h1>Resume</h1></section>
+
     </div>
-    <canvas id="mainCanvas" style="position:absolute;bottom:0;left:0;width:100%;image-rendering:pixelated;pointer-events:none;z-index:4;"></canvas>
-    <div id="clamBtn" style="position:absolute;z-index:7;bottom:0;left:0;cursor:pointer;"></div>
-    <div id="chestBtn" style="position:absolute;z-index:7;bottom:0;right:0;cursor:pointer;"></div>
-    <div class="overlay-base" id="feedbackOverlay">
-      <button class="ov-close" id="fbClose">X</button>
-      <div class="ov-title">Feedback time!</div>
-      <label class="ov-label">Email</label>
-      <input class="ov-input" type="email" id="fbEmail" placeholder="your@email.com">
-      <label class="ov-label">Food suggestions / message</label>
-      <textarea class="ov-input" id="fbMsg" rows="3" placeholder="Drop your thoughts here..."></textarea>
-      <button class="ov-btn" id="fbSubmit">FEED</button>
-    </div>
-    <div class="overlay-base" id="galleryOverlay">
-      <button class="ov-close" id="galClose">X</button>
-      <div class="ov-title">Photo Gallery</div>
-      <div class="gal-grid" id="galGrid"></div>
-    </div>
-    <div class="clam-soon" id="clamOverlay">
-      <button class="clam-soon-close" id="clamClose">X</button>
-      <div class="clam-soon-title">~ clamming soon ~</div>
-      <div class="clam-soon-body">something mysterious<br>is growing in here...<br><br>check back later!</div>
-    </div>
+
+    <canvas id="mainCanvas"></canvas>
+
   </div>
 
-  <div id="navBetta" class="nav-popup"><div class="nav-popup-title">Projects</div><a class="nav-link" href="#">Code Projects</a><a class="nav-link" href="#">Design Projects</a></div>
-  <div id="navOranda" class="nav-popup"><div class="nav-popup-title">About</div><a class="nav-link" href="#">About Me</a><a class="nav-link" href="#">Resume</a></div>
-  <div id="navPleco" class="nav-popup"><div class="nav-popup-title">Socials</div><div class="social-links"><a class="social-link" href="#">GitHub</a><a class="social-link" href="#">LinkedIn</a><a class="social-link" href="#">Instagram</a><a class="social-link" href="#">Twitter / X</a></div></div>
+  <!-- =========================
+       NAV POPUPS (ONE COPY ONLY)
+  ========================== -->
+  <div id="navBetta" class="nav-popup">
+    <div>Projects</div>
+  </div>
 
+  <div id="navOranda" class="nav-popup">
+    <div>About</div>
+    <a href="#about">About Me</a>
+    <a href="#resume">Resume</a>
+  </div>
+
+  <div id="navPleco" class="nav-popup">
+    <div>Socials</div>
+  </div>
+
+  <!-- =========================
+       BOTTOM BAR
+  ========================== -->
   <div class="bottom-bar">
     <button class="feed-btn" id="feedBtn">FEED</button>
-    <p class="tank-hint" id="tankHint">
-      <span class="hint-awake">toggle lights off = fish resting | feed = feedback</span>
-      <span class="hint-sleep">lights off — fish resting, still clickable</span>
-    </p>
   </div>
+
 </div>
 
+<!-- =========================
+     JAVASCRIPT (SECTIONED)
+========================= -->
 <script>
+
+/* ========= UTILS ========= */
 function rng(a,b){return a+Math.random()*(b-a);}
-const PS=5;
-function drawBetta(c){
-  const W=18,H=12;c.width=W*PS;c.height=H*PS;c.style.width=W*PS+'px';c.style.height=H*PS+'px';
-  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
-  const b=[[0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0,0],[0,0,0,1,1,1,2,2,2,2,2,2,1,1,0,0,0,0],[0,0,1,2,2,2,2,3,3,3,2,2,2,2,1,0,0,0],[0,1,2,2,3,3,3,3,3,3,3,2,2,2,2,1,0,0],[1,1,2,3,3,3,3,3,3,3,3,3,2,2,1,0,0,0],[1,1,2,3,3,3,3,3,3,3,3,3,2,2,1,0,0,0],[0,1,2,2,3,3,3,3,3,3,3,2,2,2,2,1,0,0],[0,0,1,2,2,2,2,3,3,3,2,2,2,2,1,0,0,0],[0,0,0,1,1,1,2,2,2,2,2,2,1,1,0,0,0,0],[0,0,0,0,0,0,1,1,4,4,4,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0]];
-  const col={1:'#FF8C00',2:'#FFA640',3:'#FFD580',4:'#cc6600'};
-  b.forEach((row,y)=>row.forEach((v,x)=>{if(v){ctx.fillStyle=col[v];ctx.fillRect(x*PS,y*PS,PS,PS);}}));
-  ctx.fillStyle='#fff';ctx.fillRect(3*PS,5*PS,PS,PS);ctx.fillStyle='#222';ctx.fillRect(3*PS+1,5*PS+1,PS-2,PS-2);
-}
-function drawOranda(c){
-  const W=16,H=14;c.width=W*PS;c.height=H*PS;c.style.width=W*PS+'px';c.style.height=H*PS+'px';
-  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
-  const o=[[0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0],[0,0,0,2,2,3,3,3,3,2,2,0,0,0,0,0],[0,0,2,3,3,3,3,3,3,3,2,2,0,0,0,0],[0,2,3,3,3,1,1,1,3,3,3,2,2,0,0,0],[2,3,3,1,1,1,1,1,1,3,3,3,2,2,0,0],[2,3,1,1,1,1,1,1,1,1,3,3,2,0,0,0],[2,3,1,1,1,1,1,1,1,1,3,3,2,0,0,0],[2,3,3,1,1,1,1,1,1,3,3,3,2,0,0,0],[0,2,3,3,3,3,3,3,3,3,3,2,2,0,0,0],[0,0,2,2,3,3,3,3,3,3,2,2,0,0,0,0],[0,0,0,1,2,2,2,2,2,4,4,1,0,0,0,0],[0,0,0,0,1,1,4,4,4,1,0,0,0,0,0,0]];
-  const col={1:'#FF82C2',2:'#e0408a',3:'#f06aaa',4:'#9e2060'};
-  o.forEach((row,y)=>row.forEach((v,x)=>{if(v){ctx.fillStyle=col[v];ctx.fillRect(x*PS,y*PS,PS,PS);}}));
-  ctx.fillStyle='#fff';ctx.fillRect(2*PS,4*PS,PS,PS);ctx.fillStyle='#222';ctx.fillRect(2*PS+1,4*PS+1,PS-2,PS-2);
-}
-function drawPleco(c){
-  const W=20,H=10;c.width=W*PS;c.height=H*PS;c.style.width=W*PS+'px';c.style.height=H*PS+'px';
-  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
-  const pl=[[0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,1,1,0,0,0],[0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,1,1,0,0],[0,0,2,3,3,1,3,1,3,1,3,1,3,1,3,3,3,1,0,0],[0,2,3,3,1,3,1,3,1,3,1,3,1,3,1,3,3,1,1,0],[2,3,3,3,3,1,3,1,3,1,3,1,3,1,3,3,3,3,2,1],[2,3,3,3,3,1,3,1,3,1,3,1,3,1,3,3,3,3,2,1],[0,2,3,3,1,3,1,3,1,3,1,3,1,3,1,3,3,1,1,0],[0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0],[0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0,0],[0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0]];
-  const col={1:'#00e5cc',2:'#006644',3:'#00aa77'};
-  pl.forEach((row,y)=>row.forEach((v,x)=>{if(v){ctx.fillStyle=col[v];ctx.fillRect(x*PS,y*PS,PS,PS);}}));
-  ctx.fillStyle='#fff';ctx.fillRect(1*PS,2*PS,PS,PS);ctx.fillStyle='#222';ctx.fillRect(1*PS+1,2*PS+1,PS-2,PS-2);
-}
-drawBetta(document.getElementById('bettaCanvas'));
-drawOranda(document.getElementById('orandaCanvas'));
-drawPleco(document.getElementById('plecoCanvas'));
 
-const bubblesEl=document.getElementById('bubbles');
-for(let i=0;i<20;i++){
-  const b=document.createElement('div');b.className='bubble';
-  const s=3+Math.random()*7;
-  b.style.cssText=`width:${s}px;height:${s}px;left:${5+Math.random()*88}%;bottom:${Math.random()*65}%;animation-duration:${3+Math.random()*5}s;animation-delay:${Math.random()*7}s;`;
-  bubblesEl.appendChild(b);
-}
+/* ========= DRAW FISH ========= */
+function drawFish(){ /* keep your pixel functions here */ }
 
-const SAND_PC=['#cc9944','#b87a22','#e8b84a','#9e6a14','#d4a855','#c07830','#FFD700','#87ffdd','#FF82C2','#0abab5'];
-const GRASS_C=['#75e688','#519602','#87ffdd','#0abab5','#3dc468','#a8f0b0'];
-let stems=[],coins=[];
-const SAND_FRAC=0.28,S=5;
-function tankW(){return document.getElementById('tank').clientWidth||700;}
-function tankH(){return document.getElementById('tank').clientHeight||500;}
+/* ========= INIT CANVAS ========= */
+function init(){}
 
-function buildGrass(W){
-  stems=[];
-  const n=Math.floor(W/38);
-  for(let i=0;i<n;i++) stems.push({baseX:Math.round((16+i*(W-32)/Math.max(n-1,1))/S)*S,h:9+Math.floor(rng(0,7)),col:GRASS_C[i%GRASS_C.length],phase:rng(0,Math.PI*2),speed:0.009+rng(0,.007),amp:rng(1.2,2.8),offsets:[]});
-}
-function spawnCoin(W,sT){const cx=W-90;coins.push({x:cx+rng(10,60),y:sT-rng(20,80),vy:rng(.3,1.2),vx:rng(-.8,.8),landed:false,col:['#FFD700','#ffe066','#cc9900'][0|Math.random()*3],size:S});}
+/* ========= FISH MOVEMENT ========= */
+function swim(){}
 
-function initCanvas(){
-  const mc=document.getElementById('mainCanvas');
-  const W=tankW(),H=tankH(),sandH=Math.round(H*SAND_FRAC);
-  mc.width=W;mc.height=H;mc.style.height=H+'px';
-  buildGrass(W);coins=[];
-  for(let i=0;i<28;i++) spawnCoin(W,H-sandH);
-  placeFloor(W,H,sandH);
-}
-function placeFloor(W,H,sandH){
-  const cl=document.getElementById('clamBtn'),ch=document.getElementById('chestBtn');
-  const cs=6,cw=18*cs,cht=14*cs,xs=6,xw=22*xs,xh=18*xs;
-  cl.style.cssText=`position:absolute;z-index:7;left:24px;bottom:${sandH-cht*0.52}px;width:${cw}px;height:${cht}px;cursor:pointer;`;
-  ch.style.cssText=`position:absolute;z-index:7;right:20px;bottom:${sandH-xh*0.48}px;width:${xw}px;height:${xh}px;cursor:pointer;`;
-  drawClam(cl,cs);drawChest(ch,xs);
-}
-function drawClam(el,cs){
-  el.innerHTML='';const W=18*cs,H=14*cs;
-  const cv=document.createElement('canvas');cv.width=W;cv.height=H;cv.style.cssText=`display:block;image-rendering:pixelated;width:${W}px;height:${H}px;`;
-  const ctx=cv.getContext('2d');
-  const top=[[0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,1,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0],[0,1,2,2,3,3,3,3,3,3,3,3,3,2,2,1,0,0],[1,2,2,3,3,4,4,4,4,4,4,3,3,3,2,2,1,0],[1,2,3,3,4,4,5,5,5,5,4,4,3,3,2,2,1,0],[1,2,3,4,4,5,5,5,5,5,5,4,3,3,2,2,1,0],[1,2,3,3,4,4,5,5,5,5,4,4,3,3,2,2,1,0],[0,1,2,3,3,3,4,4,4,4,3,3,3,2,2,1,0,0]];
-  const bot=[[0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0,0],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0],[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0],[0,1,1,2,2,2,2,2,2,2,2,2,2,2,1,1,0,0],[0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0]];
-  const pearl=[[0,1,1,0],[1,2,2,1],[1,2,2,1],[0,1,1,0]];
-  const ct={1:'#9966cc',2:'#c088ee',3:'#d4a8f4',4:'#e8c8ff',5:'#f4e8ff'};
-  const cb={1:'#7744aa',2:'#aa66dd',3:'#c088ee'};const cp={1:'#ddeeff',2:'#f0f8ff'};
-  top.forEach((row,y)=>row.forEach((v,x)=>{if(v){ctx.fillStyle=ct[v];ctx.fillRect(x*cs,y*cs,cs,cs);}}));
-  bot.forEach((row,y)=>row.forEach((v,x)=>{if(v){ctx.fillStyle=cb[v]||cb[1];ctx.fillRect(x*cs,(y+top.length)*cs,cs,cs);}}));
-  pearl.forEach((row,y)=>row.forEach((v,x)=>{if(v){ctx.fillStyle=cp[v];ctx.fillRect(7*cs+x*cs,(top.length+1)*cs+y*cs,cs,cs);}}));
-  el.appendChild(cv);
-}
-function drawChest(el,xs){
-  el.innerHTML='';const CW=22*xs,CH=18*xs;
-  const cv=document.createElement('canvas');cv.width=CW;cv.height=CH;cv.style.cssText=`display:block;image-rendering:pixelated;width:${CW}px;height:${CH}px;`;
-  const ctx=cv.getContext('2d');
-  const r=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*xs,y*xs,w*xs,h*xs);};
-  r(1,5,20,10,'#7a4a1e');r(2,5,18,10,'#8B4513');r(1,5,1,10,'#5a300a');r(20,5,1,10,'#5a300a');r(1,9,20,1,'#5a300a');r(10,5,2,5,'#c8843a');r(10,7,2,2,'#FFD700');r(3,6,2,2,'#5a300a');r(7,6,2,2,'#5a300a');r(13,6,2,2,'#5a300a');r(17,6,2,2,'#5a300a');r(3,11,2,2,'#5a300a');r(7,11,2,2,'#5a300a');r(13,11,2,2,'#5a300a');r(17,11,2,2,'#5a300a');r(1,1,20,5,'#a0632a');r(2,1,18,5,'#c8843a');r(1,1,1,5,'#5a300a');r(20,1,1,5,'#5a300a');r(1,5,20,1,'#5a300a');r(10,1,2,4,'#c8843a');r(3,2,2,2,'#7a4a1e');r(7,2,2,2,'#7a4a1e');r(13,2,2,2,'#7a4a1e');r(17,2,2,2,'#7a4a1e');
-  el.appendChild(cv);
-}
+/* ========= POPUPS ========= */
+function openPopup(){}
 
-function drawFrame(){
-  const mc=document.getElementById('mainCanvas');if(!mc.width)return;
-  const ctx=mc.getContext('2d'),W=mc.width,H=mc.height,sandH=Math.round(H*SAND_FRAC),sandTop=H-sandH;
-  ctx.clearRect(0,0,W,H);
-  const g=ctx.createLinearGradient(0,sandTop,0,H);
-  g.addColorStop(0,'#e8c96a');g.addColorStop(.5,'#d4a840');g.addColorStop(1,'#b88820');
-  ctx.fillStyle=g;ctx.fillRect(0,sandTop,W,sandH);
-  ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(0,sandTop,W,S);
-  for(let i=0;i<55;i++){
-    const px=((i*139+7)%(W-20))+8,py=sandTop+S+((i*97)%Math.floor(sandH*.6));
-    ctx.fillStyle=SAND_PC[i%SAND_PC.length];ctx.fillRect(Math.round(px/S)*S,Math.round(py/S)*S,S+((i*3)%3),S);
-  }
-  coins.forEach(coin=>{
-    if(!coin.landed){coin.y+=coin.vy;coin.vy+=.04;coin.x+=coin.vx;if(coin.y>=sandTop-coin.size*.4){coin.y=sandTop-coin.size*.4;coin.landed=true;coin.vx=0;}}
-    ctx.beginPath();ctx.ellipse(coin.x,coin.y,coin.size*1.1,coin.size*.5,-.2,0,Math.PI*2);ctx.fillStyle=coin.col;ctx.fill();ctx.strokeStyle='#aa7700';ctx.lineWidth=1;ctx.stroke();
-  });
-  stems.forEach(stem=>{
-    stem.phase+=stem.speed;stem.offsets=[];
-    for(let seg=0;seg<stem.h;seg++) stem.offsets[seg]=Math.sin(stem.phase+seg*.38)*stem.amp*((seg+1)/stem.h)*S;
-    for(let seg=0;seg<stem.h;seg++){
-      let cx=stem.baseX;for(let k=0;k<=seg;k++) cx+=stem.offsets[k]||0;
-      const px=Math.round(cx/S)*S,py=sandTop-(seg+1)*S;
-      if(px>=0&&px<W){ctx.fillStyle=seg===stem.h-1?'#fcf4af':stem.col;ctx.fillRect(px,py,S,S);}
-    }
-  });
-}
-let animGoing=true;
-function loop(){drawFrame();if(animGoing)requestAnimationFrame(loop);}
-setTimeout(()=>{initCanvas();requestAnimationFrame(loop);},100);
+/* ========= DARK MODE ========= */
+function toggleDark(){}
 
-const titleBarEl=document.getElementById('titleBar');
-function titleBottom(){return titleBarEl.offsetHeight+6;}
-const areaEl=document.getElementById('fishArea');
-function areaH(){return areaEl.clientHeight||300;}
-function areaW(){return areaEl.clientWidth||700;}
-const MIN_SEP=90,SPD=0.95;
-const fishDefs=[
-  {el:document.getElementById('fishBetta'),w:18*PS,h:12*PS},
-  {el:document.getElementById('fishOranda'),w:16*PS,h:14*PS},
-  {el:document.getElementById('fishPleco'),w:20*PS,h:10*PS},
-];
-fishDefs.forEach((f,i)=>{f.x=80+i*220;f.y=50+i*50;const a=Math.random()*Math.PI*2;f.vx=Math.cos(a)*SPD;f.vy=Math.sin(a)*SPD*.45;f.facing=f.vx>0;f.el.style.position='absolute';f.el.style.left=f.x+'px';f.el.style.top=f.y+'px';});
-function setDir(f){f.el.querySelector('canvas').style.transform=f.facing?'scaleX(-1)':'scaleX(1)';}
-fishDefs.forEach(f=>setDir(f));
-function overlaps(a,b){return Math.abs(a.x-b.x)<MIN_SEP&&Math.abs(a.y-b.y)<MIN_SEP*.55;}
-let fc=0,swimId=null;
-function swim(){
-  const W=areaW(),H=areaH(),YMIN=titleBottom();fc++;
-  fishDefs.forEach((f,i)=>{
-    let nx=f.x+f.vx,ny=f.y+f.vy;
-    if(nx<4){nx=4;f.vx=Math.abs(f.vx)+.06;f.vy+=rng(-.28,.28);}
-    if(nx>W-f.w-4){nx=W-f.w-4;f.vx=-(Math.abs(f.vx)+.06);f.vy+=rng(-.28,.28);}
-    if(ny<YMIN){ny=YMIN;f.vy=Math.abs(f.vy);f.vx+=rng(-.2,.2);}
-    if(ny>H-f.h-4){ny=H-f.h-4;f.vy=-Math.abs(f.vy);f.vx+=rng(-.2,.2);}
-    nx=Math.max(4,Math.min(nx,W-f.w-4));ny=Math.max(YMIN,Math.min(ny,H-f.h-4));
-    let blocked=false;
-    for(let j=0;j<fishDefs.length;j++){if(j===i)continue;if(overlaps({x:nx,y:ny},fishDefs[j])){blocked=true;const dx=(nx-fishDefs[j].x)||.1,dy=(ny-fishDefs[j].y)||.1;const l=Math.sqrt(dx*dx+dy*dy);f.vx=(dx/l)*SPD;f.vy=(dy/l)*SPD*.45;break;}}
-    if(!blocked){f.x=nx;f.y=ny;}
-    const sp=Math.sqrt(f.vx*f.vx+f.vy*f.vy);
-    if(sp>1.5){f.vx=f.vx/sp*1.5;f.vy=f.vy/sp*1.5;}
-    if(sp<.38){const b=.38/sp;f.vx*=b;f.vy*=b;}
-    if(fc%150===i*50){f.vx+=rng(-.38,.38);f.vy+=rng(-.22,.22);}
-    const nf=f.vx>0;if(nf!==f.facing){f.facing=nf;setDir(f);}
-    f.el.style.left=f.x+'px';f.el.style.top=f.y+'px';
-  });
-  swimId=requestAnimationFrame(swim);
-}
-swim();
+/* ========= EVENTS ========= */
+document.getElementById('lampBtn').onclick = toggleDark;
 
-function posPopup(popup,fishEl){
-  const vw=window.innerWidth,vh=window.innerHeight,PAD=10;
-  const fr=fishEl.getBoundingClientRect();
-  popup.style.visibility='hidden';popup.style.display='block';
-  const pw=popup.offsetWidth,ph=popup.offsetHeight;
-  popup.style.display='';popup.style.visibility='';
-  let l=fr.left+fr.width/2-pw/2,t=fr.top-ph-10;
-  if(t<PAD) t=fr.bottom+10;
-  if(t+ph>vh-PAD) t=vh-ph-PAD;
-  if(l<PAD) l=PAD;
-  if(l+pw>vw-PAD) l=vw-pw-PAD;
-  if(t<PAD) t=PAD;
-  popup.style.left=l+'px';popup.style.top=t+'px';
-}
-function posOverlay(ov){
-  const tank=document.getElementById('tank'),W=tank.clientWidth,H=tank.clientHeight,PAD=18;
-  ov.style.visibility='hidden';ov.style.display='block';
-  const ow=ov.offsetWidth,oh=ov.offsetHeight;
-  ov.style.display='';ov.style.visibility='';
-  ov.style.left=Math.max(PAD,(W-ow)/2)+'px';ov.style.top=Math.max(PAD,(H-oh)/2)+'px';
-}
-
-let dark=false;
-document.getElementById('lampBtn').addEventListener('click',()=>{
-  dark=!dark;
-  document.getElementById('tank').classList.toggle('dark-mode',dark);
-  document.getElementById('lampHead').classList.toggle('off',dark);
-  document.getElementById('lampGlow').classList.toggle('off',dark);
-  document.getElementById('lampLabel').textContent=dark?'OFF':'ON';
-  document.getElementById('tankHint').classList.toggle('dark-hint',dark);
-  if(dark){cancelAnimationFrame(swimId);swimId=null;fishDefs.forEach(f=>f.el.classList.add('asleep'));closeAll();}
-  else{fishDefs.forEach(f=>f.el.classList.remove('asleep'));swim();}
-});
-
-function closeAll(){document.querySelectorAll('.nav-popup').forEach(n=>n.classList.remove('show'));document.querySelectorAll('.overlay-base,.clam-soon').forEach(n=>n.classList.remove('show'));}
-
-[['fishBetta','navBetta'],['fishOranda','navOranda'],['fishPleco','navPleco']].forEach(([fid,nid])=>{
-  const fe=document.getElementById(fid),np=document.getElementById(nid);
-  fe.addEventListener('click',e=>{e.stopPropagation();const was=np.classList.contains('show');closeAll();if(!was){posPopup(np,fe);np.classList.add('show');}});
-  np.addEventListener('click',e=>e.stopPropagation());
-});
-
-document.getElementById('feedBtn').addEventListener('click',e=>{
-  e.stopPropagation();const fo=document.getElementById('feedbackOverlay');
-  const was=fo.classList.contains('show');closeAll();if(!was){posOverlay(fo);fo.classList.add('show');}
-});
-document.getElementById('feedbackOverlay').addEventListener('click',e=>e.stopPropagation());
-document.getElementById('fbClose').addEventListener('click',e=>{e.stopPropagation();document.getElementById('feedbackOverlay').classList.remove('show');});
-document.getElementById('fbSubmit').addEventListener('click',e=>{
-  e.stopPropagation();closeAll();
-  const area=document.getElementById('fishArea'),f=fishDefs[1];
-  for(let i=0;i<8;i++) setTimeout(()=>{const h=document.createElement('div');h.className='heart';h.textContent='♥';h.style.left=(f.x+rng(0,28))+'px';h.style.top=(f.y+rng(0,10))+'px';h.style.color=['#FF82C2','#FF6B4A','#fcf4af','#87ffdd'][0|Math.random()*4];area.appendChild(h);setTimeout(()=>h.remove(),1700);},i*155);
-  const ty=document.createElement('div');ty.className='ty-msg';ty.textContent='thank you for your feedback!';ty.style.left=(f.x-15)+'px';ty.style.top=(f.y-44)+'px';area.appendChild(ty);setTimeout(()=>ty.remove(),2400);
-});
-
-const GALLERY_PHOTOS=[];
-document.getElementById('chestBtn').addEventListener('click',e=>{
-  e.stopPropagation();const go=document.getElementById('galleryOverlay');
-  const was=go.classList.contains('show');closeAll();
-  if(!was){const grid=document.getElementById('galGrid');grid.innerHTML='';for(let i=0;i<6;i++){const slot=document.createElement('div');slot.className='gal-slot';if(GALLERY_PHOTOS[i]){const img=document.createElement('img');img.src=GALLERY_PHOTOS[i];slot.appendChild(img);}else slot.textContent='add photo';grid.appendChild(slot);}posOverlay(go);go.classList.add('show');}
-});
-document.getElementById('galleryOverlay').addEventListener('click',e=>e.stopPropagation());
-document.getElementById('galClose').addEventListener('click',e=>{e.stopPropagation();document.getElementById('galleryOverlay').classList.remove('show');});
-
-document.getElementById('clamBtn').addEventListener('click',e=>{
-  e.stopPropagation();const co=document.getElementById('clamOverlay');
-  const was=co.classList.contains('show');closeAll();if(!was){posOverlay(co);co.classList.add('show');}
-});
-document.getElementById('clamOverlay').addEventListener('click',e=>e.stopPropagation());
-document.getElementById('clamClose').addEventListener('click',e=>{e.stopPropagation();document.getElementById('clamOverlay').classList.remove('show');});
-document.addEventListener('click',closeAll);
-
-window.addEventListener('resize',()=>setTimeout(()=>{initCanvas();const W=tankW(),H=tankH();placeFloor(W,H,Math.round(H*SAND_FRAC));},100));
 </script>
+
+</body>
+</html>
