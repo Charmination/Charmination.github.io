@@ -97,19 +97,16 @@ html,body{width:100%;background:#097a77;}
     <div class="bubbles" id="bubbles"></div>
     <div class="fish-area" id="fishArea">
       <div class="fish" id="fishBetta"><canvas id="bettaCanvas"></canvas><div class="zzz">z z z</div><div class="fish-label">Projects</div></div>
-      <div class="fish" id="fishOranda">
-        <a href="#about" class="fish-link">
-    <div class="fish" id="fishOranda">
-        <canvas id="orandaCanvas"></canvas>
-        <div class="zzz">z z z</div>
-        <div class="fish-label">About</div>
-    </div>
-</a>
-
-    <section id="about">
-    <h1>About Me</h1>
-    <p>I'm Bonnie, an ECE student at Princeton...</p>
+<div class="fish" id="fishOranda">
+  <canvas id="orandaCanvas"></canvas>
+  <div class="zzz">z z z</div>
+  <div class="fish-label">About</div>
+</div>
+  <section id="about">
+  <h1>About Me</h1>
+  <p>I'm Bonnie, an ECE student at Princeton...</p>
 </section>
+   
       <div class="fish" id="fishPleco"><canvas id="plecoCanvas"></canvas><div class="zzz">z z z</div><div class="fish-label">Socials</div></div>
     </div>
     <canvas id="mainCanvas" style="position:absolute;bottom:0;left:0;width:100%;image-rendering:pixelated;pointer-events:none;z-index:4;"></canvas>
@@ -136,8 +133,15 @@ html,body{width:100%;background:#097a77;}
     </div>
   </div>
 
-  <div id="navBetta" class="nav-popup"><div class="nav-popup-title">Projects</div><a class="nav-link" href="#">Code Projects</a><a class="nav-link" href="#">Design Projects</a></div>
-  <div id="navOranda" class="nav-popup"><div class="nav-popup-title">About</div><a class="nav-link" href="#">About Me</a><a class="nav-link" href="#">Resume</a></div>
+<div id="navBetta" class="nav-popup"><div class="nav-popup-title">Projects</div><a class="nav-link" href="#">Code Projects</a><a class="nav-link" href="#">Design Projects</a></div>
+  
+<div id="navOranda" class="nav-popup">
+  <div class="nav-popup-title">About</div>
+
+  <a class="nav-link" href="#about">About Me</a>
+  <a class="nav-link" href="#resume">Resume</a>
+</div>
+  
   <div id="navPleco" class="nav-popup"><div class="nav-popup-title">Socials</div><div class="social-links"><a class="social-link" href="#">GitHub</a><a class="social-link" href="#">LinkedIn</a><a class="social-link" href="#">Instagram</a><a class="social-link" href="#">Twitter / X</a></div></div>
 
   <div class="bottom-bar">
