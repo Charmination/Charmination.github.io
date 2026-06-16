@@ -424,13 +424,46 @@ function sfxClamClose(){playNoise(0.15,0.06,400);playTone(500,'sine',0.12,0.06,0
 function sfxLampOn(){playNoise(0.03,0.18,2200);setTimeout(()=>playTone(420,'sine',0.15,0.08,0.005),35);const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='sine';o.frequency.value=60;g.gain.setValueAtTime(0,ac.currentTime);g.gain.linearRampToValueAtTime(0.06,ac.currentTime+0.04);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+0.4);o.start();o.stop(ac.currentTime+0.45);}
 function sfxLampOff(){playNoise(0.03,0.18,2200);const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='sine';o.frequency.setValueAtTime(60,ac.currentTime);o.frequency.exponentialRampToValueAtTime(25,ac.currentTime+0.28);g.gain.setValueAtTime(0.06,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+0.3);o.start();o.stop(ac.currentTime+0.35);}
 function sfxFeed(){const ac=getAC();[0,0.07,0.14,0.21,0.27].forEach((t,i)=>{setTimeout(()=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='sine';const bf=260+i*35;o.frequency.setValueAtTime(bf*1.5,ac.currentTime);o.frequency.exponentialRampToValueAtTime(bf,ac.currentTime+0.1);g.gain.setValueAtTime(0.1,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+0.13);o.start();o.stop(ac.currentTime+0.16);},t*1000);});}
-function sfxFishBloop(id){const b3="data:audio/mp3;base64,//vQZAAAByh+uAUZ4AJ3jxdwoBgAYSodBrnsAAoLxOFDBFAAjP//ZMAAAAEEPZ5N48ieG/V7PHo8YE4hiGKx5qjx48ePHjx4/fx7w37+PfXu/fv398P399/4pR+/V6vZ4+4DxXq9Xq9Xv94o/fv36vV6vV7OrFYyPFYrFYrFYh6Hoer3+6PHjO/f3/+X6sePHjxWMjyngMCGGgaBoKCJj3fx77y/ViseUzDY0+W8XAhBcFArHjArGRnfv2NXq9Xq9nVisViseU/gP38e/pR48V6vV6vf2YE4aA9Y9ZOzrZ5GBWRMUpTXzDfsCsTiGKx5p+rzoOhDEMVisiNZpiaC4HRFY0PQ9Rx8j////4u9//9xH////73d7//2iM8RERn9xER///d3d3dwQIIRGe4jPd3rXZ6d3d2QIECBBCI7R4gwhHiP9//jvd3fgmTJ3e/+P3u7v/3d3d//xH9kwAEEEIiIi7vfEZ4iIiIggTJk7u7u4ggQjP4JkyZMmTtoPwAAAAEhAAAOAYLVmCaDCYPQPxs2htmIUAuzekDADYFMF0FMwAgBL2D+SAoAAZfjuPy4NmAkYZZ0U5JS2YQejr5f8Sj0rkTUBsgksHA7hhX291SGJ+WF8kTTmU8rSev4V7djVK7cvpqaWF4DUJJcHHDxwJ2ny7yxycp5/c9qHWj08dhGD+Ud7PfL9+3zc7hYq5z9mmxfmnuWu5QqpBePc7mGPK2FDnaoMP/W71+n29t+TW8KeU2pZLLtFZqWNc1bx1+faK1l9XUozy3nqVSqrutez5uxlY3VvZ4ZU/Mu1q+ufWpa+rFmZnMf///////8d71zO/je1blnKOgz////////u85rKkvYXrIYCIrjV3J2WlXOp2MiMVyszMvt32c767oyourKpEJeYx7Os6MWNdkoq3RbKiorsdHlKc9TFMhCvdBisSNmV2bYxXEEMilYyFRDIcadzkccJqyur2NnaYSuyse5Bg11GFUzqVSIiHRxMYwgY1v/yCQIKOYqRgwSUUGN/+jB8VRkILhSiwoPOgAwMBgMBAGDEtbSc3/zJSJeMgAR4zEx6jUGDQMW+RM1tguTCiAbMPUJ0wmQGDASAPMFMBZAWf/70mQbAAiPZk3ue0AAedEoZcCMAGBpbyB9/AAJ4j9gl4IwAIHYVxhlAtCIEMwJAATARA7V+ZcOcG2WuVCpUlkBtZjTJx9sVXIYQHABKAQ/NqRMGXIThogAjDtal6lDguG+7EjKlTMjUtCZmYoUkc8zmJlq5kb7RmGZaraBgoGNl/B4m/DBYbaq7sA4zlmm/G6/7XFAG8eRrc9DT44wV2R1Yrjr6arKZE1iQRutLFhG4qX73rO1llL5v/z7+fdYTqNi/FYEb17vo6j/vy781Ko1LZVWrzletl2tcuUN7fLn/f5K7+Fjn/+/1hhJfv3udtfv94d3vHPu/w1rmGs+VrIAggAAFGaAdGmhkoOZcT7b3czrLzO/K3TIv/8/N3/qc6VbKZGdKRjujZcPLO5K7H1/hMssyhvKikk14RhTLOEruafSyvWcaKAhFOnemJrmTkhAfuR6Agx8YEjsEhCQVBhIq/P///8I7UIRIgjusP///8jyOKogHoIoQAX9L6YLYJGmGLBiJrKkSWYouECGCsA05gkQJKYI4BnmAXAHBgIoDAYEcAWGAGglpggIBmYD+CnGB7gTRgHoCQAgEswBIATAgASsOILHMhnEmlEGgyinTqYlB61WxIVQpbTU4JYQgs98PNa+NvbKL7oKbLmXc16Hn+3GY6ymEySrhS2J6gjUIpHrdi89NmEwRLr9d1H7odwqNXb85FeRiAYxqZqvhKIXPUU/dxoqXHClv3GtSKJP9TYVpuHYIdp/os20uiTpY36LOgppU/MttSqHrdePRqGZVAUql0WkFqmu3pdWpZ3OpK565b+rYppVayprWv7c7jzl0iCBU207gam5c7iA==";
-const b4="data:audio/mp3;base64,//vQZAAABv5+N4UV4AJsrwesoIwAYtYZHbnqgAn4xSFXAjAAAMXQBAADhPQjZCP36vV6vV6vf7+GBOIYhisiapT+kB48pv0pT3Y0PLgXA0EMVjyJAeK9Xv73ve/vv0gPHjyJe/94b9+zsjykBgQw0EMmePKw37++KP37+PvFKUve9379/H3/6U9KUu/Y0+h6vV7/fw8VisVjJqGrFYnEMQxDEMVisUavf4ThoE4JwXAuZbyDj1j1j1kLOudjZ7//wFYaZpoer4+4Dx4/Y0+c5pnWo54CHqNnf33iArEPQ9Rs8f+GrzQNBDEMNAnBODocIDzWb3fp80x6BbBcB6CcHQoHmsGQa0iDyAAPIgAopQAWhfXd3T/RP9EL90RP////0T/9Hd3P9Hd3d3d0RETiI7u7u7uiIX9dERERC/3d3d0Qv93REREQv67n6O7u7uf13/RHdzru7oiIiddEREQv//4ju7v/oiIiIWiIgRBEQAEICwFARHCoUBAJAIAgAGAIAAigYcoVJQDOdWG4h7DSxBwAkwFwHzBLADM44BQycRjcPMAgAJ4zEvEXMMkE/EohZWBumQgb1QN4YgCzYrgEhOBiwmAZOFCJukmaDKC/D1w6EDFAQAw4QAMyD40Y8o0GTJhjI0AyyFgMzGQAoyAZSJwGMAkh3UmXCyO8ZNQCgQAzWWwDi0BjgTAY7BQGTCtQstJay+QwkB2EeVwMdAgOoCYTAxGDwAAaBh8IiZf2nTZjRSalrC2YzwyAoMPjFLjHjfGY/+mjQUya+NocwtCUCWJ86X3EKDR36ur2QXa7/w+cL2B0YdOWhGAWwDgwyILAZGJPk2R3";
-const a=new Audio(id==='fishPleco'?b4:b3);
-a.volume=0.55;
-a.play().catch(err=>console.log('bloop failed:',err));
-}
+// Synthesized fish bloop — bubbly pop, different pitch per fish
+function sfxFishBloop(id) {
+  const ac = getAC();
 
+  // Each fish gets a different pitch: betta=mid, oranda=high, pleco=low
+  const pitchMap = { fishBetta: 520, fishOranda: 720, fishPleco: 340 };
+  const baseFreq = pitchMap[id] || 520;
+
+  // Layer 1: main bloop — swoops up then fades
+  const o1 = ac.createOscillator(), g1 = ac.createGain();
+  o1.connect(g1); g1.connect(ac.destination);
+  o1.type = 'sine';
+  o1.frequency.setValueAtTime(baseFreq * 0.6, ac.currentTime);
+  o1.frequency.exponentialRampToValueAtTime(baseFreq * 1.1, ac.currentTime + 0.06);
+  o1.frequency.exponentialRampToValueAtTime(baseFreq * 0.9, ac.currentTime + 0.18);
+  g1.gain.setValueAtTime(0, ac.currentTime);
+  g1.gain.linearRampToValueAtTime(0.22, ac.currentTime + 0.01);
+  g1.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.22);
+  o1.start(); o1.stop(ac.currentTime + 0.25);
+
+  // Layer 2: harmonic shimmer for bubbly texture
+  const o2 = ac.createOscillator(), g2 = ac.createGain();
+  o2.connect(g2); g2.connect(ac.destination);
+  o2.type = 'sine';
+  o2.frequency.setValueAtTime(baseFreq * 2, ac.currentTime);
+  o2.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, ac.currentTime + 0.12);
+  g2.gain.setValueAtTime(0, ac.currentTime);
+  g2.gain.linearRampToValueAtTime(0.08, ac.currentTime + 0.01);
+  g2.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.14);
+  o2.start(); o2.stop(ac.currentTime + 0.16);
+
+  // Layer 3: click at the start — the bubble "pop"
+  const o3 = ac.createOscillator(), g3 = ac.createGain();
+  o3.connect(g3); g3.connect(ac.destination);
+  o3.type = 'triangle';
+  o3.frequency.value = baseFreq * 3;
+  g3.gain.setValueAtTime(0.12, ac.currentTime);
+  g3.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.04);
+  o3.start(); o3.stop(ac.currentTime + 0.05);
+}
 // ═══════════════════════════════════════════════════
 // UTILITY + FISH PIXEL ART
 // ═══════════════════════════════════════════════════
