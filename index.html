@@ -411,7 +411,10 @@ html, body { width: 100%; height: 100%; background: #097a77; overflow: hidden; }
 // ═══════════════════════════════════════════════════
 let audioCtx=null;
 function getAC(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx;}
-document.addEventListener('click',()=>{getAC();},{once:true});
+document.addEventListener('click',()=>{
+  const ac=getAC();
+  if(ac.state==='suspended') ac.resume();
+},{once:true});
 function playTone(freq,type,dur,vol,atk){const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0,ac.currentTime);g.gain.linearRampToValueAtTime(vol||0.15,ac.currentTime+(atk||0.008));g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);o.start();o.stop(ac.currentTime+dur+0.05);}
 function playNoise(dur,vol,fc){const ac=getAC(),buf=ac.createBuffer(1,ac.sampleRate*dur,ac.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const src=ac.createBufferSource(),flt=ac.createBiquadFilter(),g=ac.createGain();src.buffer=buf;flt.type='bandpass';flt.frequency.value=fc||800;flt.Q.value=1;g.gain.setValueAtTime(vol||0.1,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);src.connect(flt);flt.connect(g);g.connect(ac.destination);src.start();src.stop(ac.currentTime+dur+0.05);}
 function sfxChestOpen(){const ac=getAC();[{f:330,t:0,d:0.08},{f:440,t:0.09,d:0.12}].forEach(n=>{setTimeout(()=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='triangle';o.frequency.value=n.f;g.gain.setValueAtTime(0.18,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+n.d);o.start();o.stop(ac.currentTime+n.d+0.02);playNoise(n.d,0.06,180);},n.t*1000);});setTimeout(()=>playTone(1400,'sine',0.1,0.07,0.003),200);setTimeout(()=>playTone(1600,'sine',0.08,0.06,0.003),270);}
@@ -546,7 +549,10 @@ document.querySelectorAll('.content-panel').forEach(p=>p.addEventListener('click
 [['fishBetta','navBetta'],['fishOranda','navOranda'],['fishPleco','navPleco']].forEach(([fid,nid])=>{
   const fe=document.getElementById(fid),np=document.getElementById(nid);
   fe.addEventListener('click',e=>{
-    e.stopPropagation();sfxFishBloop(fid);
+    e.stopPropagation();
+    const ac=getAC();
+    if(ac.state==='suspended'){ac.resume().then(()=>sfxFishBloop(fid));}
+    else{sfxFishBloop(fid);}
     const wasOpen=np.classList.contains('show');
     closeNavPopups();closeAllPanels();closeSmallOverlays();
     if(!wasOpen){posPopup(np,fe);np.classList.add('show');fishFrozen=true;}
