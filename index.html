@@ -521,122 +521,7 @@ html, body { width: 100%; height: 100%; background: #097a77; overflow: hidden; }
   </div>
 </div>
 
-// ═══════════════════════════════════════════════════
-// BLOG POSTS
-// To add a new post: copy one object and fill in your details.
-// img: path to an image file, or "" to show no image.
-// body: the full text of your post (use \n for new lines).
-// ═══════════════════════════════════════════════════
-const BLOG_POSTS = [
-  {
-    title: "My First Blog Post",
-    date: "June 2025",
-    img: "",   // e.g. "images/blog1.jpg"
-    body: "Write your blog post content here.\n\nYou can add as many paragraphs as you want. Just use \\n to make a new line."
-  },
-  {
-    title: "Building This Website",
-    date: "May 2025",
-    img: "",
-    body: "This is where I'd talk about how I built the aquarium site."
-  },
-  // Add more posts here following the same format ↑
-];
 
-// Renders the blog post card list into #blogList
-function renderBlogList() {
-  const list = document.getElementById('blogList');
-  list.innerHTML = '';
-
-  if (BLOG_POSTS.length === 0) {
-    list.innerHTML = '<p style="font-size:clamp(7px,1vw,10px);opacity:.6;">no posts yet — add some in the BLOG_POSTS array!</p>';
-    return;
-  }
-
-  BLOG_POSTS.forEach((post, i) => {
-    const card = document.createElement('div');
-    card.className = 'blog-card';
-    card.onclick = () => openBlogDetail(i);
-
-    // Left: title + date
-    const text = document.createElement('div');
-    text.className = 'blog-card-text';
-    text.innerHTML = `
-      <div class="blog-card-title">${post.title}</div>
-      <div class="blog-card-date">${post.date}</div>
-    `;
-
-    // Right: thumbnail or placeholder square
-    let thumb;
-    if (post.img) {
-      thumb = document.createElement('img');
-      thumb.className = 'blog-card-img';
-      thumb.src = post.img;
-      thumb.alt = post.title;
-    } else {
-      thumb = document.createElement('div');
-      thumb.className = 'blog-card-img-placeholder';
-      thumb.textContent = 'no img';
-    }
-
-    card.appendChild(text);
-    card.appendChild(thumb);
-    list.appendChild(card);
-  });
-}
-
-// Opens the detail view for post at index i
-function openBlogDetail(i) {
-  const post = BLOG_POSTS[i];
-  document.getElementById('blogPanelTitle').textContent = 'Blog';
-  document.getElementById('blogDetailTitle').textContent = post.title;
-  document.getElementById('blogDetailDate').textContent = post.date;
-
-  const img = document.getElementById('blogDetailImg');
-  if (post.img) {
-    img.src = post.img;
-    img.style.display = 'block';
-  } else {
-    img.style.display = 'none';
-  }
-
-  // Render body — split on \n for paragraph breaks
-  const body = document.getElementById('blogDetailBody');
-  body.innerHTML = post.body
-    .split('\n')
-    .filter(l => l.trim() !== '')
-    .map(l => `<p style="margin-bottom:14px;">${l}</p>`)
-    .join('');
-
-  document.getElementById('blogList').classList.add('hidden');
-  document.getElementById('blogDetail').classList.add('show');
-}
-
-// Goes back to the list view (also used by the X close button)
-function closeBlogDetail() {
-  const detail = document.getElementById('blogDetail');
-  if (detail.classList.contains('show')) {
-    // We're in detail view — go back to list
-    detail.classList.remove('show');
-    document.getElementById('blogList').classList.remove('hidden');
-  } else {
-    // We're in list view — close the whole panel
-    closePanel('cpBlog');
-  }
-}
-
-// Render the list whenever the blog panel opens
-// Patch openPanel to re-render blog on open
-const _origOpenPanel = openPanel;
-openPanel = function(id) {
-  _origOpenPanel(id);
-  if (id === 'cpBlog') {
-    // Reset to list view when reopening
-    document.getElementById('blogDetail').classList.remove('show');
-    document.getElementById('blogList').classList.remove('hidden');
-    renderBlogList();
-  }
-};
   
 <script>
 // ═══════════════════════════════════════════════════
@@ -883,7 +768,99 @@ document.getElementById('clamBtn').addEventListener('click',e=>{
 });
 document.getElementById('clamOverlay').addEventListener('click',e=>e.stopPropagation());
 document.getElementById('clamClose').addEventListener('click',e=>{e.stopPropagation();sfxClamClose();document.getElementById('clamOverlay').classList.remove('show');setClamOpen(false);});
+// ═══════════════════════════════════════════════════
+// BLOG POSTS
+// Add new posts here — just copy one object and fill in your details.
+// img: relative path like "images/blog1.jpg", or "" for no image.
+// body: your post text. Use \n between paragraphs.
+// ═══════════════════════════════════════════════════
+const BLOG_POSTS = [
+  {
+    title: "My First Blog Post",
+    date: "June 2025",
+    img: "",
+    body: "Write your blog post content here.\n\nYou can add as many paragraphs as you want."
+  },
+  {
+    title: "Building This Website",
+    date: "May 2025",
+    img: "",
+    body: "This is where I'd talk about how I built the aquarium site.\n\nIt was a fun project!"
+  },
+];
 
+// Builds the list of blog card previews inside #blogList
+function renderBlogList() {
+  const list = document.getElementById('blogList');
+  list.innerHTML = '';
+  if (BLOG_POSTS.length === 0) {
+    list.innerHTML = '<p style="font-size:clamp(7px,1vw,10px);opacity:.6;">no posts yet!</p>';
+    return;
+  }
+  BLOG_POSTS.forEach((post, i) => {
+    const card = document.createElement('div');
+    card.className = 'blog-card';
+    card.onclick = () => openBlogDetail(i);
+    const text = document.createElement('div');
+    text.className = 'blog-card-text';
+    text.innerHTML = `<div class="blog-card-title">${post.title}</div><div class="blog-card-date">${post.date}</div>`;
+    let thumb;
+    if (post.img) {
+      thumb = document.createElement('img');
+      thumb.className = 'blog-card-img';
+      thumb.src = post.img;
+      thumb.alt = post.title;
+    } else {
+      thumb = document.createElement('div');
+      thumb.className = 'blog-card-img-placeholder';
+      thumb.textContent = 'no img';
+    }
+    card.appendChild(text);
+    card.appendChild(thumb);
+    list.appendChild(card);
+  });
+}
+
+// Opens the full post view for post at index i
+function openBlogDetail(i) {
+  const post = BLOG_POSTS[i];
+  document.getElementById('blogDetailTitle').textContent = post.title;
+  document.getElementById('blogDetailDate').textContent = post.date;
+  const img = document.getElementById('blogDetailImg');
+  if (post.img) { img.src = post.img; img.style.display = 'block'; }
+  else { img.style.display = 'none'; }
+  document.getElementById('blogDetailBody').innerHTML = post.body
+    .split('\n').filter(l => l.trim())
+    .map(l => `<p style="margin-bottom:14px;">${l}</p>`).join('');
+  document.getElementById('blogList').classList.add('hidden');
+  document.getElementById('blogDetail').classList.add('show');
+}
+
+// X button: if in detail view go back, otherwise close the panel
+function closeBlogDetail() {
+  const detail = document.getElementById('blogDetail');
+  if (detail.classList.contains('show')) {
+    detail.classList.remove('show');
+    document.getElementById('blogList').classList.remove('hidden');
+  } else {
+    closePanel('cpBlog');
+  }
+}
+
+// Hook into openPanel — render blog list fresh every time blog opens
+// This must be AFTER openPanel is defined, which is why it's placed here
+const _origOpenPanel = openPanel;
+openPanel = function(id) {
+  _origOpenPanel(id);
+  if (id === 'cpBlog') {
+    document.getElementById('blogDetail').classList.remove('show');
+    document.getElementById('blogList').classList.remove('hidden');
+    renderBlogList();
+  }
+};
+
+// Click outside → close everything
+document.addEventListener('click',()=>{closeAll();});
 // Click outside → close everything
 document.addEventListener('click',()=>{closeAll();});
 
