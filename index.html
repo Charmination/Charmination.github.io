@@ -107,6 +107,109 @@ html, body { width: 100%; height: 100%; background: #097a77; overflow: hidden; }
 #cpBlog .cp-close { color: #fff8f4; border-color: rgba(255,255,255,.3); }
 #cpBlog .cp-body { color: #3a1a0a; }
 
+/* ── BLOG POST CARDS (list view) ── */
+.blog-card {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,.55);
+  border: 2px solid rgba(135,80,40,.18);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: background .15s, transform .12s;
+}
+.blog-card:hover {
+  background: rgba(255,255,255,.8);
+  transform: translateY(-2px);
+}
+.blog-card-text { flex: 1; min-width: 0; }
+.blog-card-title {
+  font-size: clamp(7px, 1vw, 10px);
+  color: #3a1a0a;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+.blog-card-date {
+  font-size: clamp(5px, .75vw, 8px);
+  color: #876143;
+  opacity: .8;
+  letter-spacing: .5px;
+}
+.blog-card-img {
+  flex-shrink: 0;
+  width: clamp(48px, 7vw, 72px);
+  height: clamp(48px, 7vw, 72px);
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid rgba(135,80,40,.25);
+  background: rgba(135,80,40,.1);
+  image-rendering: pixelated;
+}
+.blog-card-img-placeholder {
+  flex-shrink: 0;
+  width: clamp(48px, 7vw, 72px);
+  height: clamp(48px, 7vw, 72px);
+  border-radius: 8px;
+  border: 2px dashed rgba(135,80,40,.3);
+  background: rgba(135,80,40,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(5px, .7vw, 7px);
+  color: rgba(135,80,40,.4);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ── BLOG POST DETAIL VIEW (replaces list when a post is clicked) ── */
+#blogDetail {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+#blogDetail.show { display: flex; }
+#blogList.hidden { display: none; }
+
+.blog-detail-back {
+  display: inline-block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(6px, .85vw, 9px);
+  color: #876143;
+  background: rgba(135,80,40,.12);
+  border: 2px solid rgba(135,80,40,.25);
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+  margin-bottom: 18px;
+  transition: background .15s;
+}
+.blog-detail-back:hover { background: rgba(135,80,40,.22); }
+.blog-detail-title {
+  font-size: clamp(8px, 1.2vw, 13px);
+  color: #3a1a0a;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+.blog-detail-date {
+  font-size: clamp(5px, .75vw, 8px);
+  color: #876143;
+  margin-bottom: 20px;
+  opacity: .8;
+}
+.blog-detail-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid rgba(135,80,40,.2);
+  margin-bottom: 20px;
+}
+.blog-detail-body {
+  font-size: clamp(6px, .9vw, 9px);
+  line-height: 2.6;
+  color: #3a1a0a;
+}
+
 /* -- Design Projects: #F07D48 bg, #37B1E9 accent -- */
 #cpDesign { background: #F07D48; }
 #cpDesign .cp-header { background: #37B1E9; }
@@ -315,15 +418,27 @@ html, body { width: 100%; height: 100%; background: #097a77; overflow: hidden; }
       </div><!-- end .cp-body -->
     </div><!-- end #cpAbout -->
 
-    <!-- Blog: #F1AAD0 + #876143 -->
+<!-- Blog: #F1AAD0 + #876143 -->
     <div class="content-panel" id="cpBlog">
       <div class="cp-header">
-        <span class="cp-title">Blog</span>
-        <button class="cp-close" onclick="closePanel('cpBlog')">X</button>
+        <span class="cp-title" id="blogPanelTitle">Blog</span>
+        <button class="cp-close" onclick="closeBlogDetail()">X</button>
       </div>
-      <div class="cp-body">
-        <p style="line-height:2.2; font-size:clamp(7px,1vw,10px);">[ blog content goes here ]</p>
+
+      <!-- LIST VIEW: all blog post cards -->
+      <div class="cp-body" id="blogList">
+        <!-- Cards are generated from BLOG_POSTS array in JS below -->
       </div>
+
+      <!-- DETAIL VIEW: shown when a card is clicked -->
+      <div class="cp-body" id="blogDetail">
+        <button class="blog-detail-back" onclick="closeBlogDetail()">← back</button>
+        <div class="blog-detail-title" id="blogDetailTitle"></div>
+        <div class="blog-detail-date" id="blogDetailDate"></div>
+        <img class="blog-detail-img" id="blogDetailImg" src="" alt="" style="display:none;">
+        <div class="blog-detail-body" id="blogDetailBody"></div>
+      </div>
+
     </div>
 
     <!-- Design Projects: #F07D48 + #37B1E9 -->
@@ -406,6 +521,123 @@ html, body { width: 100%; height: 100%; background: #097a77; overflow: hidden; }
   </div>
 </div>
 
+// ═══════════════════════════════════════════════════
+// BLOG POSTS
+// To add a new post: copy one object and fill in your details.
+// img: path to an image file, or "" to show no image.
+// body: the full text of your post (use \n for new lines).
+// ═══════════════════════════════════════════════════
+const BLOG_POSTS = [
+  {
+    title: "My First Blog Post",
+    date: "June 2025",
+    img: "",   // e.g. "images/blog1.jpg"
+    body: "Write your blog post content here.\n\nYou can add as many paragraphs as you want. Just use \\n to make a new line."
+  },
+  {
+    title: "Building This Website",
+    date: "May 2025",
+    img: "",
+    body: "This is where I'd talk about how I built the aquarium site."
+  },
+  // Add more posts here following the same format ↑
+];
+
+// Renders the blog post card list into #blogList
+function renderBlogList() {
+  const list = document.getElementById('blogList');
+  list.innerHTML = '';
+
+  if (BLOG_POSTS.length === 0) {
+    list.innerHTML = '<p style="font-size:clamp(7px,1vw,10px);opacity:.6;">no posts yet — add some in the BLOG_POSTS array!</p>';
+    return;
+  }
+
+  BLOG_POSTS.forEach((post, i) => {
+    const card = document.createElement('div');
+    card.className = 'blog-card';
+    card.onclick = () => openBlogDetail(i);
+
+    // Left: title + date
+    const text = document.createElement('div');
+    text.className = 'blog-card-text';
+    text.innerHTML = `
+      <div class="blog-card-title">${post.title}</div>
+      <div class="blog-card-date">${post.date}</div>
+    `;
+
+    // Right: thumbnail or placeholder square
+    let thumb;
+    if (post.img) {
+      thumb = document.createElement('img');
+      thumb.className = 'blog-card-img';
+      thumb.src = post.img;
+      thumb.alt = post.title;
+    } else {
+      thumb = document.createElement('div');
+      thumb.className = 'blog-card-img-placeholder';
+      thumb.textContent = 'no img';
+    }
+
+    card.appendChild(text);
+    card.appendChild(thumb);
+    list.appendChild(card);
+  });
+}
+
+// Opens the detail view for post at index i
+function openBlogDetail(i) {
+  const post = BLOG_POSTS[i];
+  document.getElementById('blogPanelTitle').textContent = 'Blog';
+  document.getElementById('blogDetailTitle').textContent = post.title;
+  document.getElementById('blogDetailDate').textContent = post.date;
+
+  const img = document.getElementById('blogDetailImg');
+  if (post.img) {
+    img.src = post.img;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+
+  // Render body — split on \n for paragraph breaks
+  const body = document.getElementById('blogDetailBody');
+  body.innerHTML = post.body
+    .split('\n')
+    .filter(l => l.trim() !== '')
+    .map(l => `<p style="margin-bottom:14px;">${l}</p>`)
+    .join('');
+
+  document.getElementById('blogList').classList.add('hidden');
+  document.getElementById('blogDetail').classList.add('show');
+}
+
+// Goes back to the list view (also used by the X close button)
+function closeBlogDetail() {
+  const detail = document.getElementById('blogDetail');
+  if (detail.classList.contains('show')) {
+    // We're in detail view — go back to list
+    detail.classList.remove('show');
+    document.getElementById('blogList').classList.remove('hidden');
+  } else {
+    // We're in list view — close the whole panel
+    closePanel('cpBlog');
+  }
+}
+
+// Render the list whenever the blog panel opens
+// Patch openPanel to re-render blog on open
+const _origOpenPanel = openPanel;
+openPanel = function(id) {
+  _origOpenPanel(id);
+  if (id === 'cpBlog') {
+    // Reset to list view when reopening
+    document.getElementById('blogDetail').classList.remove('show');
+    document.getElementById('blogList').classList.remove('hidden');
+    renderBlogList();
+  }
+};
+  
 <script>
 // ═══════════════════════════════════════════════════
 // SOUND ENGINE
