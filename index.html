@@ -2333,7 +2333,7 @@
       .map(([fx, fy, k, v]) => ({ x: W * fx, y: H * fy, w: W * .12 * k, v }));
 
     // ── distant boat: starts near the horizon by the beach, sails right, then loops ──
-    const bs = Math.max(2, Math.round(B * .6));
+    const bs = Math.max(3, Math.round(B * .9));          // boat pixel size
     const bc = document.createElement('canvas');
     bc.width = BOAT_SPRITE[0].length * bs; bc.height = BOAT_SPRITE.length * bs;
     const bx = bc.getContext('2d');
