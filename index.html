@@ -3035,15 +3035,14 @@
   /* ── Coursework Castle: the courses taken so far ──
      To add a course, add a line under the right term (newest term first). */
   const COURSEWORK = [
-    { term: 'Fall 2026', courses: [
-      ['ECE 302', 'Robotics & Autonomous Systems (Car Lab)'],
-    ] },
-    { term: 'Spring 2026', courses: [
-      ['ECE 203', 'Final lab: Heart-Rate-Responsive Pump'],
-      ['Lighting Design', 'Final project: lighting design for "For the First Time in Forever"'],
-    ] },
+    // Coming soon. Example of the format:
+    // { term: 'Fall 2026', courses: [
+    //   ['ECE 302', 'Robotics & Autonomous Systems'],
+    // ] },
   ];
-  document.getElementById('courseList').innerHTML = COURSEWORK.map(t =>
+  document.getElementById('courseList').innerHTML = !COURSEWORK.length
+    ? '<div class="course-item" style="text-align:center">Under construction. Courses coming soon!</div>'
+    : COURSEWORK.map(t =>
     `<div class="course-term">${t.term}</div>` +
     t.courses.map(([code, name]) => `<div class="course-item"><b>${code}</b> · ${name}</div>`).join('')
   ).join('');
