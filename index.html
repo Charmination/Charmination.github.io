@@ -352,6 +352,19 @@
     .shore-sub:hover { filter: brightness(1.15) drop-shadow(0 0 8px rgba(255,255,255,.9)); }
     .shore-sub .fish-label { opacity: 1; }                 /* always show "Dive back down" */
 
+    /* Bonnie Pixel: click target over the girl, and her little card */
+    .bonnie-spot { position: absolute; z-index: 3; cursor: pointer; }
+    .bonnie-spot:hover .fish-label { opacity: 1; }
+    .bonnie-card {
+      display: none; position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: min(360px, 86%); padding: 22px 20px 20px; text-align: center;
+      font-family: 'Press Start 2P', monospace;
+      background: #fff3e0; color: #2b1d14; border: 3px solid #3a2414; border-radius: 14px; box-shadow: 0 5px 0 #3a2414;
+    }
+    .bonnie-card.show { display: block; }
+    .bonnie-card-title { font-size: clamp(10px, 1.3vw, 14px); margin-bottom: 12px; color: #0a8f8a; letter-spacing: 2px; }
+    .bonnie-card-text  { font-size: clamp(7px, .9vw, 10px); line-height: 2; }
+
     /* seagulls flying across the shore sky */
     .gull-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
     .gull-flock { position: absolute; top: 0; left: 0; }
@@ -1289,6 +1302,15 @@
         <canvas id="shoreSubCanvas"></canvas>
       </div>
       <div class="shore-title">The Shore</div>
+      <!-- invisible click target sitting on top of the girl drawn on the canvas -->
+      <div class="bonnie-spot" id="bonnieSpot" role="button" aria-label="Bonnie Pixel">
+        <span class="fish-label">Bonnie Pixel</span>
+      </div>
+      <div class="bonnie-card" id="bonnieCard">
+        <button class="ov-close" id="bonnieClose" aria-label="Close">X</button>
+        <div class="bonnie-card-title">Bonnie Pixel</div>
+        <div class="bonnie-card-text">Busy fishing right now. Her features are still being decided.</div>
+      </div>
     </div>
 
   </div><!-- /tank-wrap -->
@@ -2154,7 +2176,7 @@
   }
 
   const sub = { el: document.getElementById('submarine'), x: 0, y: 0, vx: -0.45, t: 0 };
-  function subScale() { return Math.max(4, PS + 1); }   // a bit bigger than the fish pixels
+  function subScale() { return Math.max(3, PS); }
   function initSub() {
     drawSub(document.getElementById('subCanvas'), subScale());
     sub.w = SUB_SPRITE[0].length * subScale();
@@ -2186,80 +2208,232 @@
 
 
   /* ══════════════════════════════════════════════════════════════
-     THE SHORE — pixel beach scene drawn on a canvas.
-     Sand sweeps in from the LEFT, ocean on the right, sun + clouds.
+     THE SHORE — an animated pixel beach.
+       · sky + sun with blinking rays that slowly circle it
+       · clouds drifting across
+       · waves rolling in, crashing on the sand, and soaking in
+       · a girl standing on the sand, watching the ocean
+     The still parts are painted once onto a hidden canvas; each frame
+     copies that and draws the moving parts on top.
      ══════════════════════════════════════════════════════════════ */
-  function drawShore() {
+  const GIRL_SPRITE = [            // seen from behind, facing the ocean (right)
+    "....kkkk....",
+    "...kkkkkk...",
+    "..kkkkkkkk..",
+    "..kkkkkkKs..",
+    "..kkkkkkKs..",
+    "..kkkkkkks..",
+    "..kkkkkkk...",
+    "..kkkkkks...",
+    "..kkkkkk....",
+    "..kkkGGGG...",
+    "..kkGGGGGG..",
+    "..sGGGGGGGs.",
+    "..sGGgGGGGs.",
+    "..sGGGGGGGs.",
+    "...GGGGGGG..",
+    "...bbbbbbb..",
+    "...bBbbbBb..",
+    "...bbb.bbb..",
+    "....ss..ss..",
+    "....ss..ss..",
+    "....ss..ss..",
+    "....ss..ss..",
+    "...pPP.pPP..",
+  ];
+  const GIRL_COLORS = { k:'#1b1a22', K:'#2c2a36', s:'#f2c49d', G:'#4f9a4a', g:'#3f8540', b:'#4a74b5', B:'#3a5f99', p:'#f7a6c4', P:'#e58ab0' };
+
+  const shore = { running: false, t: 0 };
+
+  function setupShore() {
     const c = document.getElementById('shoreCanvas');
     const W = c.width  = document.getElementById('tank').clientWidth;
     const H = c.height = document.getElementById('tank').clientHeight;
-    const ctx = c.getContext('2d');
     const B = Math.max(4, PS + 1);                       // pixel block size
     const snap = v => Math.floor(v / B) * B;
-    const horizon = snap(H * .55);
+    const horizon = snap(H * .55), seaH = H - horizon;
+    const shoreX  = t => W * (.20 + .28 * t);             // waterline; t: 0 at horizon → 1 at bottom
+    Object.assign(shore, { c, ctx: c.getContext('2d'), W, H, B, snap, horizon, seaH, shoreX });
 
-    // sky: banded blue (pixel-y steps instead of a smooth fade)
-    const skyBands = ['#5db8f5', '#6cc2f7', '#7dcbf8', '#8fd4fa', '#a3ddfb', '#b8e6fc'];
-    skyBands.forEach((col, i) => {
-      ctx.fillStyle = col;
-      ctx.fillRect(0, snap(horizon * i / skyBands.length), W, snap(horizon / skyBands.length) + B);
+    // ── still background: sky, sea, dry sand ──
+    const bg = document.createElement('canvas'); bg.width = W; bg.height = H;
+    const g = bg.getContext('2d');
+    ['#5db8f5', '#6cc2f7', '#7dcbf8', '#8fd4fa', '#a3ddfb', '#b8e6fc'].forEach((col, i, a) => {
+      g.fillStyle = col; g.fillRect(0, snap(horizon * i / a.length), W, snap(horizon / a.length) + B);
     });
-
-    // sun with a soft glow
-    const sx = W * .8, sy = H * .17, sr = Math.max(26, Math.min(W, H) * .07);
-    ctx.fillStyle = 'rgba(255,240,170,.35)';
-    ctx.beginPath(); ctx.arc(sx, sy, sr * 1.9, 0, Math.PI * 2); ctx.fill();
-    for (let y = -sr; y <= sr; y += B) for (let x = -sr; x <= sr; x += B) {
-      if (x * x + y * y <= sr * sr) {
-        ctx.fillStyle = (x * x + y * y > sr * sr * .65) ? '#ffd23f' : '#ffe680';
-        ctx.fillRect(snap(sx + x), snap(sy + y), B, B);
-      }
-    }
-
-    // blocky clouds
-    [[.12, .16, 1], [.40, .27, .8], [.60, .11, .6]].forEach(([fx, fy, k]) => {
-      const cx = W * fx, cy = H * fy, cw = W * .12 * k;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(snap(cx), snap(cy), snap(cw), B * 2);
-      ctx.fillRect(snap(cx + cw * .2), snap(cy) - B * 2, snap(cw * .5), B * 2);
-      ctx.fillStyle = '#e3f2ff';
-      ctx.fillRect(snap(cx), snap(cy) + B * 2, snap(cw), B);
+    ['#3fb6c9', '#33a6bd', '#2896b0', '#1f86a3', '#177696'].forEach((col, i, a) => {
+      g.fillStyle = col; g.fillRect(0, horizon + snap(seaH * i / a.length), W, snap(seaH / a.length) + B);
     });
-
-    // ocean: light at the horizon to deeper blue, with white wave flecks
-    const seaBands = ['#3fb6c9', '#33a6bd', '#2896b0', '#1f86a3', '#177696'];
-    const seaH = H - horizon;
-    seaBands.forEach((col, i) => {
-      ctx.fillStyle = col;
-      ctx.fillRect(0, horizon + snap(seaH * i / seaBands.length), W, snap(seaH / seaBands.length) + B);
-    });
-    ctx.fillStyle = 'rgba(255,255,255,.55)';
-    for (let i = 0; i < 70; i++) {
-      ctx.fillRect(snap((i * 173) % W), horizon + snap(((i * 97) % 100) / 100 * seaH), B * (2 + i % 3), B);
-    }
-
-    // beach: sand sweeping in from the left, with a foam line where it meets the water
-    const shoreX = t => snap(W * (.20 + .28 * t));          // t: 0 at horizon → 1 at bottom
     for (let y = horizon - B * 2; y < H; y += B) {
       const t = Math.max(0, (y - horizon) / seaH);
-      ctx.fillStyle = t > .6 ? '#e2bf6a' : '#ecd08a';
-      ctx.fillRect(0, y, shoreX(t), B);
-      ctx.fillStyle = 'rgba(255,255,255,.9)';
-      ctx.fillRect(shoreX(t), y, B * 2, B);
+      g.fillStyle = t > .6 ? '#e2bf6a' : '#ecd08a';
+      g.fillRect(0, y, snap(shoreX(t)) + B, B);
     }
-    for (let i = 0; i < 45; i++) {                           // pebbles + pink shells
+    for (let i = 0; i < 45; i++) {                         // pebbles + pink shells
       const py = horizon + snap(((i * 61) % 100) / 100 * seaH);
-      const px = snap(((i * 137) % 1000) / 1000 * (shoreX((py - horizon) / seaH) - B * 3));
-      ctx.fillStyle = ['#c99a35', '#f4dfa0', '#d6a94a', '#f7a6c4'][i % 4];
-      ctx.fillRect(px, py, B, B);
+      const px = snap(((i * 137) % 1000) / 1000 * (shoreX((py - horizon) / seaH) - W * .07));
+      g.fillStyle = ['#c99a35', '#f4dfa0', '#d6a94a', '#f7a6c4'][i % 4];
+      g.fillRect(px, py, B, B);
     }
+    shore.bg = bg;
 
-    // the submarine floats on the water, right of the beach
-    const sc = Math.max(5, PS + 2);
+    // ── sun disc (pre-drawn) ──
+    shore.sun = { x: W * .8, y: H * .17, r: Math.max(26, Math.min(W, H) * .07) };
+    const sd = document.createElement('canvas'), r = shore.sun.r;
+    sd.width = sd.height = Math.ceil(r * 2 + B * 2);
+    const sg = sd.getContext('2d');
+    for (let y = -r; y <= r; y += B) for (let x = -r; x <= r; x += B) {
+      if (x * x + y * y <= r * r) {
+        sg.fillStyle = (x * x + y * y > r * r * .65) ? '#ffd23f' : '#ffe680';
+        sg.fillRect(Math.floor((x + r) / B) * B, Math.floor((y + r) / B) * B, B, B);
+      }
+    }
+    shore.sunDisc = sd;
+
+    // ── clouds: each drifts at its own speed and wraps around ──
+    shore.clouds = [[.12, .16, 1, .18], [.40, .27, .8, .12], [.62, .10, .6, .25], [.85, .22, .7, .15]]
+      .map(([fx, fy, k, v]) => ({ x: W * fx, y: H * fy, w: W * .12 * k, v }));
+
+    // ── the girl, standing on dry sand a little back from the water ──
+    const gs = Math.max(3, PS);
+    const gc = document.createElement('canvas');
+    gc.width = GIRL_SPRITE[0].length * gs; gc.height = GIRL_SPRITE.length * gs;
+    const gx = gc.getContext('2d');
+    GIRL_SPRITE.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return; gx.fillStyle = GIRL_COLORS[ch]; gx.fillRect(x * gs, y * gs, gs, gs);
+    }));
+    const feetY = horizon + seaH * .62;
+    // stand on dry sand: back from where the waves reach, facing the water
+    shore.girl = { img: gc, x: snap(shoreX(.62) - W * .07 - gc.width - W * .04), y: snap(feetY - gc.height), s: gs };
+    const spot = document.getElementById('bonnieSpot');
+    Object.assign(spot.style, { left: shore.girl.x + 'px', top: shore.girl.y + 'px', width: gc.width + 'px', height: gc.height + 'px' });
+    // fishing gear: rod from her hands up toward the water, bobber floating offshore
+    const handX = shore.girl.x + 10 * gs, handY = shore.girl.y + 13 * gs;
+    shore.rod = { hx: handX, hy: handY, tx: handX + gs * 9, ty: handY - gs * 12 };
+    const by = handY + gs * 2;
+    shore.bobber = { x: shoreX((by - horizon) / seaH) + W * .09, y: by };
+
+    // ── the floating submarine (a separate element, so it can be clicked) ──
+    const sc = Math.max(3, PS + 1);
     drawSub(document.getElementById('shoreSubCanvas'), sc);
     const subEl = document.getElementById('shoreSub');
     subEl.style.left = (W * .58) + 'px';
     subEl.style.top  = (horizon + seaH * .30 - SUB_SPRITE.length * sc * .55) + 'px';
+  }
+
+  function drawShoreFrame() {
+    const { ctx, W, H, B, snap, horizon, seaH, shoreX, sun } = shore;
+    const t = shore.t;
+    ctx.drawImage(shore.bg, 0, 0);
+
+    // sun rays: rectangles pointing out from the sun, slowly circling and blinking
+    const RAYS = 10;
+    for (let i = 0; i < RAYS; i++) {
+      const a = t * .15 + i * (Math.PI * 2 / RAYS);
+      ctx.save();
+      ctx.translate(sun.x, sun.y); ctx.rotate(a);
+      ctx.globalAlpha = .25 + .55 * (0.5 + 0.5 * Math.sin(t * 2.2 + i * 1.7));
+      ctx.fillStyle = i % 2 ? '#fff3b0' : '#ffe680';
+      const len = sun.r * (i % 2 ? .55 : .8);
+      ctx.fillRect(sun.r * 1.2, -B * .75, len, B * 1.5);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    ctx.drawImage(shore.sunDisc, sun.x - sun.r, sun.y - sun.r);
+
+    // clouds drift right and wrap around
+    shore.clouds.forEach(cl => {
+      cl.x += cl.v; if (cl.x > W + 20) cl.x = -cl.w - 20;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(snap(cl.x), snap(cl.y), snap(cl.w), B * 2);
+      ctx.fillRect(snap(cl.x + cl.w * .2), snap(cl.y) - B * 2, snap(cl.w * .5), B * 2);
+      ctx.fillStyle = '#e3f2ff';
+      ctx.fillRect(snap(cl.x), snap(cl.y) + B * 2, snap(cl.w), B);
+    });
+
+    // sparkles on the open water, sliding gently back and forth
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    for (let i = 0; i < 70; i++) {
+      const y = horizon + snap(((i * 97) % 100) / 100 * seaH);
+      const x = snap(((i * 173) % W) + Math.sin(t * .8 + i) * B * 2);
+      if (x > shoreX((y - horizon) / seaH) + B * 3) ctx.fillRect(x, y, B * (2 + i % 3), B);
+    }
+
+    // ── waves: every ~5 s a wave rolls in, crashes, washes up the sand, and soaks in ──
+    const PERIOD = 5.2;
+    const p = (t % PERIOD) / PERIOD;                       // 0 → 1 through one wave
+    const reachMax = W * .07;
+    // 0–.30: crest rolls in   .30–.45: washes up the sand   .45–1: slides back, sand soaks it up
+    const reach = p < .30 ? 0
+                : p < .45 ? reachMax * Math.sin(((p - .30) / .15) * Math.PI / 2)
+                : reachMax * (1 - (p - .45) / .55) ** 1.6;
+    const wetFade = p < .45 ? 1 : 1 - (p - .45) / .55;    // dark wet sand fades as it absorbs
+
+    for (let y = horizon; y < H; y += B) {
+      const tt = (y - horizon) / seaH, edge = shoreX(tt);
+      const wob = Math.sin(y * .05 + t * 1.3) * B;        // keeps the edges from being ruler-straight
+      // wet sand left behind (darker), fading away
+      if (p >= .30) {
+        ctx.fillStyle = `rgba(160,120,50,${.35 * wetFade})`;
+        ctx.fillRect(snap(edge - reachMax + wob), y, snap(reachMax), B);
+      }
+      // the incoming crest out in the water
+      if (p < .30) {
+        const off = W * .14 * (1 - p / .30);
+        ctx.fillStyle = 'rgba(255,255,255,.85)';
+        ctx.fillRect(snap(edge + off + wob), y, B * 2, B);
+        ctx.fillStyle = 'rgba(160,230,240,.6)';
+        ctx.fillRect(snap(edge + off + wob) + B * 2, y, B * 3, B);
+      }
+      // the thin sheet of water running up the sand, with a foamy front
+      if (reach > B) {
+        ctx.fillStyle = 'rgba(120,215,225,.55)';
+        ctx.fillRect(snap(edge - reach + wob), y, snap(reach + B * 2), B);
+        ctx.fillStyle = 'rgba(255,255,255,.9)';
+        ctx.fillRect(snap(edge - reach + wob), y, B, B);
+      }
+      // the steady foam line at the waterline
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.fillRect(snap(edge + wob * .5), y, B, B);
+    }
+
+    // the girl, fishing
+    ctx.drawImage(shore.girl.img, shore.girl.x, shore.girl.y);
+    const gs = shore.girl.s, rod = shore.rod, bob = shore.bobber;
+    const sway = Math.sin(t * 1.4) * gs * .6;                 // rod tip sways a little
+    // rod: chunky pixel steps from her hands to the tip
+    const steps = 12;
+    for (let i = 0; i <= steps; i++) {
+      const k = i / steps;
+      ctx.fillStyle = i < 3 ? '#3a2414' : '#8a5a2b';          // dark grip, wooden rod
+      ctx.fillRect(Math.round(rod.hx + (rod.tx - rod.hx) * k + sway * k), Math.round(rod.hy + (rod.ty - rod.hy) * k), gs, gs);
+    }
+    // bobber bobs on the surface and now and then dips (a nibble!)
+    const nibble = (t % 7) > 6.2 ? Math.sin((t % 7 - 6.2) * 20) * gs * 1.2 : 0;
+    const bx = bob.x, byy = bob.y + Math.sin(t * 2) * gs * .5 + nibble;
+    // fishing line: a gentle sagging curve from rod tip to the bobber
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = Math.max(1, gs / 3);
+    ctx.beginPath();
+    ctx.moveTo(rod.tx + sway + gs / 2, rod.ty);
+    ctx.quadraticCurveTo((rod.tx + bx) / 2 + sway, Math.min(rod.ty, byy) + Math.abs(byy - rod.ty) * .9, bx + gs, byy - gs);
+    ctx.stroke();
+    // the red bait/bobber: red body, white top
+    const bs = gs * 2;                                          // bobber pixel size
+    ctx.fillStyle = '#e8343c'; ctx.fillRect(Math.round(bx), Math.round(byy), bs, bs);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(bx), Math.round(byy - bs / 2), bs, bs / 2);
+    ctx.fillStyle = 'rgba(255,255,255,.6)';                    // little ripple ring
+    ctx.fillRect(Math.round(bx - bs / 2), Math.round(byy + bs), bs * 2, Math.max(2, gs / 2));
+  }
+
+  function shoreLoop() {
+    if (!shore.running) return;
+    shore.t += 1 / 60;
+    drawShoreFrame();
+    requestAnimationFrame(shoreLoop);
+  }
+  function drawShore() {           // (re)build the scene and draw one frame
+    setupShore();
+    drawShoreFrame();
   }
 
   function surface() {
@@ -2270,12 +2444,15 @@
     sc.setAttribute('aria-hidden', 'false');
     sc.classList.add('show');
     startGulls();
+    shore.running = true; requestAnimationFrame(shoreLoop);
   }
   function diveBack() {
     const sc = document.getElementById('shoreScene');
     sc.classList.remove('show');
     sc.setAttribute('aria-hidden', 'true');
     stopGulls();
+    shore.running = false;
+    document.getElementById('bonnieCard').classList.remove('show');
     // the submarine is waiting front-and-center when you land back in the tank
     sub.x = areaW() / 2 - sub.w / 2;
     sub.t = 0;
@@ -2338,7 +2515,17 @@
     const layer = document.getElementById('gullLayer'); if (layer) layer.innerHTML = '';
   }
   document.getElementById('submarine').addEventListener('click', e => { e.stopPropagation(); surface(); });
-  document.getElementById('shoreScene').addEventListener('click', e => e.stopPropagation());
+  document.getElementById('shoreScene').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('bonnieCard').classList.remove('show');   // clicking elsewhere closes her card
+  });
+  document.getElementById('bonnieSpot').addEventListener('click', e => {
+    e.stopPropagation(); document.getElementById('bonnieCard').classList.add('show');
+  });
+  document.getElementById('bonnieCard').addEventListener('click', e => e.stopPropagation());
+  document.getElementById('bonnieClose').addEventListener('click', e => {
+    e.stopPropagation(); document.getElementById('bonnieCard').classList.remove('show');
+  });
   document.getElementById('shoreSub').addEventListener('click', e => { e.stopPropagation(); diveBack(); });
 
 
