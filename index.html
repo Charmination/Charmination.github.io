@@ -185,7 +185,10 @@
     /* ════════════════════════════════════════════════
        FISH — pixel art sprites that swim around
        ════════════════════════════════════════════════ */
-    .fish-area { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 5; }
+    /* clicks pass through the empty water (so the submarine behind stays clickable);
+       the fish themselves still catch clicks */
+    .fish-area { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 5; pointer-events: none; }
+    .fish-area .fish { pointer-events: auto; }
 
     .fish {
       position: absolute; cursor: pointer;
@@ -326,6 +329,40 @@
       font-size: clamp(6px,.9vw,9px); line-height: 2.4;
       padding-left: 1em; margin-bottom: 14px;
     }
+
+    /* ── Submarine in the tank ── */
+    .submarine { position: absolute; z-index: 5; cursor: pointer; transition: filter .15s; }
+    .submarine canvas { display: block; image-rendering: pixelated; }
+    .submarine:hover  { filter: brightness(1.2) drop-shadow(0 0 8px rgba(255,255,255,.9)); }
+    .submarine:hover .fish-label { opacity: 1; }
+    .tank-wrap.dark-mode .submarine { filter: brightness(.55) saturate(.6); }
+
+    /* ── The Shore scene ── */
+    .shore-scene {
+      position: absolute; inset: 0; z-index: 9800;
+      transform: translateY(100%);            /* parked below; slides UP when you surface */
+      transition: transform .9s cubic-bezier(.6,0,.3,1);
+      overflow: hidden; visibility: hidden;
+    }
+    .shore-scene.show { transform: translateY(0); visibility: visible; }
+    #shoreCanvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+    .shore-sub { position: absolute; z-index: 2; animation: subBob 2.4s ease-in-out infinite; }
+    .shore-sub canvas { display: block; image-rendering: pixelated; }
+    @keyframes subBob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-6px) rotate(1.5deg); } }
+    .shore-title {
+      position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 3;
+      font-family: 'Press Start 2P', monospace; font-size: clamp(12px, 2vw, 22px);
+      color: #1d4f91; letter-spacing: 3px; text-shadow: 0 2px 0 rgba(255,255,255,.7); white-space: nowrap;
+    }
+    .shore-back {
+      position: absolute; right: 18px; bottom: 18px; z-index: 3;
+      font-family: 'Press Start 2P', monospace; font-size: clamp(8px, 1vw, 11px);
+      color: #fff; background: #1d4f91; border: 3px solid #0d2a52; border-radius: 8px;
+      padding: 10px 14px; box-shadow: 0 4px 0 #0d2a52; cursor: pointer;
+    }
+    .shore-back:hover  { background: #2a64b3; }
+    .shore-back:active { transform: translateY(3px); box-shadow: 0 1px 0 #0d2a52; }
+    @media (prefers-reduced-motion: reduce) { .shore-scene { transition: none; } .shore-sub { animation: none; } }
 
     /* Small photo gallery under the About Me text */
     .about-gallery {
@@ -1042,6 +1079,12 @@
          Click a fish → nav popup appears near it.
          Click a fish → its page slides in (no in-between menu).
          ───────────────────────────────────────────── -->
+    <!-- Submarine: cruises around the tank. Click it to surface to the shore. -->
+    <div class="submarine" id="submarine" role="button" aria-label="Ride the submarine up to the shore">
+      <span class="fish-label">Surface</span>
+      <canvas id="subCanvas"></canvas>
+    </div>
+
     <div class="fish-area" id="fishArea">
 
       <!-- Gold fish → Projects page -->
@@ -1229,6 +1272,17 @@
           send me a message <span class="pearl-link-sub">via the message in a bottle</span>
         </button>
       </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         THE SHORE — where the submarine takes you. Blue sky, sun,
+         a sandy beach on the left, and the sub bobbing in the water.
+         ═══════════════════════════════════════════════════════ -->
+    <div class="shore-scene" id="shoreScene" aria-hidden="true">
+      <canvas id="shoreCanvas"></canvas>
+      <div class="shore-sub" id="shoreSub"><canvas id="shoreSubCanvas"></canvas></div>
+      <div class="shore-title">The Shore</div>
+      <button class="shore-back" id="shoreBack">Dive back down</button>
     </div>
 
   </div><!-- /tank-wrap -->
@@ -2054,7 +2108,162 @@
     });
     swimId = requestAnimationFrame(swim);
   }
-  swim();
+  swim();   // start the swim loop
+
+
+  /* ══════════════════════════════════════════════════════════════
+     SUBMARINE — cruises slowly back and forth behind the fish.
+     Click it and it carries you UP to the shore.
+     Sprite faces LEFT (propeller on the right); flipped when moving right.
+     ══════════════════════════════════════════════════════════════ */
+  const SUB_SPRITE = [
+    "..........kkk...............",
+    "........kkkkkk..............",
+    "........kyyyyk..............",
+    "........kyyyyk..............",
+    "........kyyyyk..............",
+    ".....kkkkkkkkkkkk...........",
+    "...kkyyyyyyyyyyyykk..k....p.",
+    ".kkykkyyykkyyykkyyykkkkkk.p.",
+    ".kykwwkykwwkykwwkyyykkkYYkp.",
+    ".kyykkyyykkyyykkyyyykkkYYkp.",
+    ".kkYYYYYYYYYYYYYYYYkkkkkk.p.",
+    "...kkYYYYYYYYYYYYkk..k....p.",
+    ".....kkkkkkkkkkkk...........",
+  ];
+  const SUB_COLORS = { k:'#3a2a10', y:'#f2c230', Y:'#d29a18', h:'#ffe27a', w:'#9fe3ff', p:'#8a8f99' };
+
+  function drawSub(canvas, scale) {
+    canvas.width  = SUB_SPRITE[0].length * scale;
+    canvas.height = SUB_SPRITE.length * scale;
+    const ctx = canvas.getContext('2d');
+    SUB_SPRITE.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = SUB_COLORS[ch];
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }));
+  }
+
+  const sub = { el: document.getElementById('submarine'), x: 0, y: 0, vx: -0.45, t: 0 };
+  function subScale() { return Math.max(3, PS); }
+  function initSub() {
+    drawSub(document.getElementById('subCanvas'), subScale());
+    sub.w = SUB_SPRITE[0].length * subScale();
+    sub.h = SUB_SPRITE.length * subScale();
+    if (!sub.x) sub.x = areaW() * .7;
+    sub.baseY = titleBottom() + (areaH() - Math.round(areaH() * SAND_FRAC) - titleBottom()) * .55;
+  }
+  initSub();
+
+  function cruise() {
+    if (!fishFrozen && !dark) {
+      const W = areaW();
+      sub.x += sub.vx; sub.t += 0.02;
+      if (sub.x < 6)             { sub.x = 6;             sub.vx =  Math.abs(sub.vx); }
+      if (sub.x > W - sub.w - 6) { sub.x = W - sub.w - 6; sub.vx = -Math.abs(sub.vx); }
+      sub.y = sub.baseY + Math.sin(sub.t) * 10;           // gentle up-and-down drift
+      sub.el.style.left = sub.x + 'px';
+      sub.el.style.top  = sub.y + 'px';
+      sub.el.querySelector('canvas').style.transform = sub.vx > 0 ? 'scaleX(-1)' : '';
+    }
+    requestAnimationFrame(cruise);
+  }
+  requestAnimationFrame(cruise);   // first frame runs after the whole script has loaded
+
+
+  /* ══════════════════════════════════════════════════════════════
+     THE SHORE — pixel beach scene drawn on a canvas.
+     Sand sweeps in from the LEFT, ocean on the right, sun + clouds.
+     ══════════════════════════════════════════════════════════════ */
+  function drawShore() {
+    const c = document.getElementById('shoreCanvas');
+    const W = c.width  = document.getElementById('tank').clientWidth;
+    const H = c.height = document.getElementById('tank').clientHeight;
+    const ctx = c.getContext('2d');
+    const B = Math.max(4, PS + 1);                       // pixel block size
+    const snap = v => Math.floor(v / B) * B;
+    const horizon = snap(H * .55);
+
+    // sky: banded blue (pixel-y steps instead of a smooth fade)
+    const skyBands = ['#5db8f5', '#6cc2f7', '#7dcbf8', '#8fd4fa', '#a3ddfb', '#b8e6fc'];
+    skyBands.forEach((col, i) => {
+      ctx.fillStyle = col;
+      ctx.fillRect(0, snap(horizon * i / skyBands.length), W, snap(horizon / skyBands.length) + B);
+    });
+
+    // sun with a soft glow
+    const sx = W * .8, sy = H * .17, sr = Math.max(26, Math.min(W, H) * .07);
+    ctx.fillStyle = 'rgba(255,240,170,.35)';
+    ctx.beginPath(); ctx.arc(sx, sy, sr * 1.9, 0, Math.PI * 2); ctx.fill();
+    for (let y = -sr; y <= sr; y += B) for (let x = -sr; x <= sr; x += B) {
+      if (x * x + y * y <= sr * sr) {
+        ctx.fillStyle = (x * x + y * y > sr * sr * .65) ? '#ffd23f' : '#ffe680';
+        ctx.fillRect(snap(sx + x), snap(sy + y), B, B);
+      }
+    }
+
+    // blocky clouds
+    [[.12, .16, 1], [.40, .27, .8], [.60, .11, .6]].forEach(([fx, fy, k]) => {
+      const cx = W * fx, cy = H * fy, cw = W * .12 * k;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(snap(cx), snap(cy), snap(cw), B * 2);
+      ctx.fillRect(snap(cx + cw * .2), snap(cy) - B * 2, snap(cw * .5), B * 2);
+      ctx.fillStyle = '#e3f2ff';
+      ctx.fillRect(snap(cx), snap(cy) + B * 2, snap(cw), B);
+    });
+
+    // ocean: light at the horizon to deeper blue, with white wave flecks
+    const seaBands = ['#3fb6c9', '#33a6bd', '#2896b0', '#1f86a3', '#177696'];
+    const seaH = H - horizon;
+    seaBands.forEach((col, i) => {
+      ctx.fillStyle = col;
+      ctx.fillRect(0, horizon + snap(seaH * i / seaBands.length), W, snap(seaH / seaBands.length) + B);
+    });
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    for (let i = 0; i < 70; i++) {
+      ctx.fillRect(snap((i * 173) % W), horizon + snap(((i * 97) % 100) / 100 * seaH), B * (2 + i % 3), B);
+    }
+
+    // beach: sand sweeping in from the left, with a foam line where it meets the water
+    const shoreX = t => snap(W * (.20 + .28 * t));          // t: 0 at horizon → 1 at bottom
+    for (let y = horizon - B * 2; y < H; y += B) {
+      const t = Math.max(0, (y - horizon) / seaH);
+      ctx.fillStyle = t > .6 ? '#e2bf6a' : '#ecd08a';
+      ctx.fillRect(0, y, shoreX(t), B);
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      ctx.fillRect(shoreX(t), y, B * 2, B);
+    }
+    for (let i = 0; i < 45; i++) {                           // pebbles + pink shells
+      const py = horizon + snap(((i * 61) % 100) / 100 * seaH);
+      const px = snap(((i * 137) % 1000) / 1000 * (shoreX((py - horizon) / seaH) - B * 3));
+      ctx.fillStyle = ['#c99a35', '#f4dfa0', '#d6a94a', '#f7a6c4'][i % 4];
+      ctx.fillRect(px, py, B, B);
+    }
+
+    // the submarine floats on the water, right of the beach
+    const sc = Math.max(3, PS + 1);
+    drawSub(document.getElementById('shoreSubCanvas'), sc);
+    const subEl = document.getElementById('shoreSub');
+    subEl.style.left = (W * .58) + 'px';
+    subEl.style.top  = (horizon + seaH * .30 - SUB_SPRITE.length * sc * .55) + 'px';
+  }
+
+  function surface() {
+    closeAll();
+    drawShore();
+    getAC().resume().then(() => sfxBottle());
+    const sc = document.getElementById('shoreScene');
+    sc.setAttribute('aria-hidden', 'false');
+    sc.classList.add('show');
+  }
+  function diveBack() {
+    const sc = document.getElementById('shoreScene');
+    sc.classList.remove('show');
+    sc.setAttribute('aria-hidden', 'true');
+  }
+  document.getElementById('submarine').addEventListener('click', e => { e.stopPropagation(); surface(); });
+  document.getElementById('shoreScene').addEventListener('click', e => e.stopPropagation());
+  document.getElementById('shoreBack').addEventListener('click', e => { e.stopPropagation(); diveBack(); });
 
 
   /* ══════════════════════════════════════════════════════════════
@@ -3396,6 +3605,8 @@ the colors, and programming cues timed to the song.`,
       drawLamp();
       drawAllFish();
       fishDefs.forEach(f => { f.w = GF_W * PS; f.h = GF_H * PS; });
+      initSub();
+      if (document.getElementById('shoreScene').classList.contains('show')) drawShore();
       initCanvas();
       placeFloor(tankW(), tankH(), Math.round(tankH() * SAND_FRAC));
     }, 100);
