@@ -595,6 +595,14 @@
     #cpDesign .skill-row { display: none; }   /* projects already list skills in the subtitle */
     .skill-subtitle-big { font-size: clamp(7px, .9vw, 10px); margin: 0 0 10px; align-self: flex-start; }
 
+    /* "In Progress" pill next to a title */
+    .status-pill {
+      display: inline-block; vertical-align: middle; margin-left: 6px;
+      font-size: clamp(6px, .75vw, 8px); font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
+      color: #3a2414; background: #f2b33d; border: 2px solid #3a2414; border-radius: 999px;
+      padding: 4px 8px; box-shadow: 0 2px 0 #3a2414;
+    }
+
     /* Space between two link buttons sitting side by side */
     .project-link-btn { margin-right: 10px; }   /* wraps neatly when there are several */
 
@@ -1231,7 +1239,7 @@
        ══════════════════════════════════════════════ -->
   <div class="bottom-bar">
     <button class="feed-btn" id="feedBtn">FEED</button>
-    <div class="tank-hint" id="tankHint">
+    <div class="tank-hint" id="tankHint" hidden>
       <span class="hint-awake">Fish = navigate · Bottle = leave a message · Chest = gallery · Clam = contact</span>
       <span class="hint-sleep">Lights off. The fish are resting but still clickable.</span>
     </div>
@@ -2387,6 +2395,7 @@
         Every field except title is optional — leave it out or use ''.
 
      FIELDS YOU CAN USE IN EACH ENTRY
+       status    – optional pill next to the title       'In Progress'
        title     – big text on the card                 'Custom PC Build'
        tag       – small line under the title           'Robotics Club · 2024'
        group     – optional heading the card sits under 'research'
@@ -2471,6 +2480,11 @@
         const title = document.createElement('div');
         title.className   = prefix + '-card-title';
         title.textContent = item.title;
+        if (item.status) {                          // e.g. an "In Progress" pill
+          const pill = document.createElement('span');
+          pill.className = 'status-pill'; pill.textContent = item.status;
+          title.append(' ', pill);
+        }
 
         const tag = document.createElement('div');
         tag.className   = prefix + '-card-tag';
@@ -2597,6 +2611,11 @@
     function showItem(item) {
       stack.push(item);
       $('DetailTitle').textContent = item.title;
+      if (item.status) {
+        const pill = document.createElement('span');
+        pill.className = 'status-pill'; pill.textContent = item.status;
+        $('DetailTitle').append(' ', pill);
+      }
       // Projects only: skills subtitle under the big title
       let sub = $('Detail').querySelector('.skill-subtitle');
       if (!sub) {
@@ -3003,6 +3022,7 @@ development journey started.`
   const COURSE_PROJECTS = [
     {
       title:  'Car Lab',
+      status: 'In Progress',
       tag:    'ECE 302 · Robotics & Autonomous Systems · Princeton University · Fall 2026',
       icon:   'images/carlab/icon.jpg',
       skills: ['PSoC', 'Embedded C', 'Feedback Control (PID)', 'Circuit Design', 'Soldering', 'KiCad', 'Oscilloscope', 'Sensors', 'XBee Telemetry'],
