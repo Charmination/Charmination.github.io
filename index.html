@@ -2417,25 +2417,13 @@
       g.fillStyle = ['#c99a35', '#f4dfa0', '#d6a94a', '#f7a6c4'][i % 4];
       g.fillRect(px, py, B, B);
     }
-    // ── far-off bluff with the lighthouse on top ──
-    // It's far away, so it's drawn small and sits up on a hill above the horizon.
-    // That size difference next to Bonnie (who is close) is what gives the scene depth.
-    const hillPeakX = W * .07, hillHalfW = W * .11, hillH = H * .10;
-    for (let x = 0; x < hillPeakX + hillHalfW; x += B) {
-      const d = (x + B / 2 - hillPeakX) / hillHalfW;               // -1 … 0 (peak) … 1
-      const h = snap(hillH * Math.max(0, 1 - d * d));              // rounded hill shape
-      if (h <= 0) continue;
-      g.fillStyle = '#d4b77c';                                     // hazy far-away sand
-      g.fillRect(x, horizon - h, B, h + B * 2);
-      g.fillStyle = '#c4a56a';                                     // shady side, lower slope
-      if (d > .2) g.fillRect(x, horizon - h + B * 2, B, h);
-      g.fillStyle = '#8fb26b';                                     // beach grass along the top
-      g.fillRect(x, horizon - h, B, B);
-      if ((x / B) % 3 === 0) g.fillRect(x, horizon - h - B, B, B); // little grass tufts
-    }
+    // ── lighthouse at the far end of the beach ──
+    // It's far away, so it's drawn small. That size difference next to Bonnie
+    // (who is close) is what gives the scene depth.
+    const hillPeakX = W * .07;                                     // where along the beach it stands
     const ls = Math.max(2, Math.round(PS * .5));                  // small: it's far away
     const lhW = LIGHTHOUSE_SPRITE[0].length * ls, lhH = LIGHTHOUSE_SPRITE.length * ls;
-    const lhX = Math.round(hillPeakX - lhW / 2), lhY = horizon - snap(hillH) + ls * 2 - lhH;
+    const lhX = Math.round(hillPeakX - lhW / 2), lhY = horizon + B - lhH;   // standing on the back of the beach
     paintSprite(g, LIGHTHOUSE_SPRITE, LIGHTHOUSE_COLORS, lhX, lhY, ls);
     shore.lamp = { x: lhX + 5.5 * ls, y: lhY + 4.5 * ls, s: ls };   // where the light shines from
     Object.assign(document.getElementById('lighthouseSpot').style, {
