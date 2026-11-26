@@ -358,18 +358,52 @@
     .shore-sub:hover { filter: brightness(1.15) drop-shadow(0 0 8px rgba(255,255,255,.9)); }
     .shore-sub .fish-label { opacity: 1; }                 /* always show "Dive back down" */
 
-    /* Bonnie Pixel: click target over the girl, and her little card */
-    .bonnie-spot { position: absolute; z-index: 3; cursor: pointer; }
-    .bonnie-spot:hover .fish-label { opacity: 1; }
-    .bonnie-card {
+    /* Invisible click targets sitting on top of things drawn on the shore canvas
+       (Bonnie Pixel and the lighthouse). They show a hover label like the fish. */
+    .shore-spot { position: absolute; z-index: 3; cursor: pointer; }
+    .shore-spot:hover .fish-label { opacity: 1; }
+
+    /* Small pop-up card on the shore (used by the lighthouse for now) */
+    .shore-card {
       display: none; position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%);
       width: min(360px, 86%); padding: 22px 20px 20px; text-align: center;
       font-family: 'Press Start 2P', monospace;
       background: #fff3e0; color: #2b1d14; border: 3px solid #3a2414; border-radius: 14px; box-shadow: 0 5px 0 #3a2414;
     }
-    .bonnie-card.show { display: block; }
-    .bonnie-card-title { font-size: clamp(10px, 1.3vw, 14px); margin-bottom: 12px; color: #0a8f8a; letter-spacing: 2px; }
-    .bonnie-card-text  { font-size: clamp(7px, .9vw, 10px); line-height: 2; }
+    .shore-card.show { display: block; }
+    .shore-card-title { font-size: clamp(10px, 1.3vw, 14px); margin-bottom: 12px; color: #0a8f8a; letter-spacing: 2px; }
+    .shore-card-text  { font-size: clamp(7px, .9vw, 10px); line-height: 2; }
+
+    /* ── Talking to Bonnie: a video-game style dialogue box along the bottom ── */
+    .bonnie-dialog {
+      display: none; position: absolute; z-index: 5; left: 50%; bottom: 14px; transform: translateX(-50%);
+      width: min(640px, 94%); padding: 14px 16px; gap: 14px; align-items: flex-start;
+      font-family: 'Press Start 2P', monospace; color: #2b1d14;
+      background: #fff3e0; border: 3px solid #3a2414; border-radius: 12px; box-shadow: 0 5px 0 #3a2414;
+    }
+    .bonnie-dialog.show { display: flex; }
+    .bonnie-dialog .ov-close { top: 8px; right: 8px; }
+    .bd-portrait {                                          /* little framed picture of Bonnie */
+      flex-shrink: 0; padding: 6px; background: #bfe6f7; border: 3px solid #3a2414; border-radius: 8px;
+      image-rendering: pixelated;
+    }
+    .bd-body    { flex: 1; min-width: 0; padding-right: 34px; }
+    .bd-name    { font-size: clamp(8px, 1vw, 11px); color: #0a8f8a; letter-spacing: 1px; margin-bottom: 10px; }
+    .bd-text    { font-size: clamp(8px, 1vw, 11px); line-height: 1.9; min-height: 3.8em; cursor: pointer; }
+    .bd-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .bd-choice, .bd-name-input {
+      font-family: 'Press Start 2P', monospace; font-size: clamp(8px, .9vw, 10px); color: #2b1d14;
+      background: #ffe7b3; border: 2px solid #3a2414; border-radius: 7px; padding: 8px 11px;
+      box-shadow: 0 3px 0 #3a2414; cursor: pointer;
+    }
+    .bd-choice:hover { background: #ffd27a; }
+    .bd-choice:active { transform: translateY(2px); box-shadow: 0 1px 0 #3a2414; }
+    .bd-choice::before { content: '> '; color: #0a8f8a; }   /* little game-style arrow */
+    .bd-name-input { background: #fffaf0; cursor: text; box-shadow: none; width: 13em; max-width: 100%; }
+    @media (max-width: 600px) {
+      .bd-portrait { display: none; }                        /* more room for words on phones */
+      .bd-name-input { font-size: 16px; font-family: monospace; }   /* 16px stops phones from zooming in */
+    }
 
     /* seagulls flying across the shore sky */
     .gull-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
@@ -1328,14 +1362,30 @@
         <canvas id="shoreSubCanvas"></canvas>
       </div>
       <div class="shore-title">The Shore</div>
-      <!-- invisible click target sitting on top of the girl drawn on the canvas -->
-      <div class="bonnie-spot" id="bonnieSpot" role="button" aria-label="Bonnie Pixel">
+      <!-- invisible click targets sitting on top of Bonnie and the lighthouse drawn on the canvas -->
+      <div class="shore-spot" id="bonnieSpot" role="button" aria-label="Talk to Bonnie Pixel">
         <span class="fish-label">Bonnie Pixel</span>
       </div>
-      <div class="bonnie-card" id="bonnieCard">
+      <div class="shore-spot" id="lighthouseSpot" role="button" aria-label="Lighthouse">
+        <span class="fish-label">Lighthouse</span>
+      </div>
+
+      <!-- Lighthouse pop-up (placeholder until we decide what it does) -->
+      <div class="shore-card" id="lighthouseCard">
+        <button class="ov-close" id="lighthouseClose" aria-label="Close">X</button>
+        <div class="shore-card-title">The Lighthouse</div>
+        <div class="shore-card-text">The light is on, but nobody's home yet. Something is coming here soon.</div>
+      </div>
+
+      <!-- Talking to Bonnie: the words and choices are filled in by the dialogue code -->
+      <div class="bonnie-dialog" id="bonnieDialog" role="dialog" aria-label="Talking to Bonnie Pixel">
         <button class="ov-close" id="bonnieClose" aria-label="Close">X</button>
-        <div class="bonnie-card-title">Bonnie Pixel</div>
-        <div class="bonnie-card-text">Busy fishing right now. Her features are still being decided.</div>
+        <canvas class="bd-portrait" id="bdPortrait"></canvas>
+        <div class="bd-body">
+          <div class="bd-name">Bonnie Pixel</div>
+          <div class="bd-text" id="bdText" aria-live="polite"></div>
+          <div class="bd-choices" id="bdChoices"></div>
+        </div>
       </div>
     </div>
 
@@ -2281,6 +2331,60 @@
   ];
   const BOAT_COLORS = { w:'#ffffff', W:'#dceefa', k:'#5a3a22', h:'#a8452f', H:'#7e2f1f' };
 
+  const LIGHTHOUSE_SPRITE = [      // red-and-white lighthouse on a little rock
+    "....kkk....",
+    "...kRRRk...",
+    "..kRRRRRk..",
+    "..kkkkkkk..",
+    "..kGLLLGk..",
+    "..kGLLLGk..",
+    ".kkkkkkkkk.",
+    "...kWWWk...",
+    "...kWWWk...",
+    "...kRRRk...",
+    "...kRRRk...",
+    "..kWWWWWk..",
+    "..kWWWWWk..",
+    "..kRRRRRk..",
+    "..kRRRRRk..",
+    "..kWWWWWk..",
+    "..kWWWWWk..",
+    ".kRRRRRRRk.",
+    ".kRRRRRRRk.",
+    ".kWWWWWWWk.",
+    ".kWWkkkWWk.",
+    ".kWWkDkWWk.",
+    "kkkkkkkkkkk",
+    "rrrrrrrrrrr",
+  ];
+  // k outline · R red stripe · W white stripe · G lamp frame · L lamp glass · D door · r rock
+  const LIGHTHOUSE_COLORS = { k:'#3a2a2a', R:'#d8423a', W:'#fbf6ec', G:'#5a6b74', L:'#ffe680', D:'#7a4a2a', r:'#8c8f8f' };
+
+  const SANDCASTLE_SPRITE = [      // just for looks: a little sandcastle with a red flag
+    ".......fff.....",
+    ".......ff......",
+    ".......k.......",
+    "k.k..k.k.k..k.k",
+    "kkk..kkkkk..kkk",
+    "SsS..SsSsS..SsS",
+    "SSS..SSSSS..SSS",
+    "SsSkkSSSSSkkSsS",
+    "SSSSSSSkSSSSSSS",
+    "SsSSSSSSSSSSsSS",
+    "SSSSSSkkkSSSSSS",
+    "SSSSSkdddkSSSSS",
+    "sSSSSkdddkSSSSs",
+  ];
+  const SANDCASTLE_COLORS = { k:'#7d5a24', S:'#c99a45', s:'#b0833a', d:'#5e4319', f:'#e8343c' };   // wet-sand tones so it stands out
+
+  // paint a letter-grid sprite straight onto a canvas context at (x, y)
+  function paintSprite(g, rows, colors, x0, y0, sc) {
+    rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      g.fillStyle = colors[ch]; g.fillRect(x0 + x * sc, y0 + y * sc, sc, sc);
+    }));
+  }
+
   const shore = { running: false, t: 0 };
 
   function setupShore() {
@@ -2313,7 +2417,45 @@
       g.fillStyle = ['#c99a35', '#f4dfa0', '#d6a94a', '#f7a6c4'][i % 4];
       g.fillRect(px, py, B, B);
     }
+    // ── far-off bluff with the lighthouse on top ──
+    // It's far away, so it's drawn small and sits up on a hill above the horizon.
+    // That size difference next to Bonnie (who is close) is what gives the scene depth.
+    const hillPeakX = W * .07, hillHalfW = W * .11, hillH = H * .10;
+    for (let x = 0; x < hillPeakX + hillHalfW; x += B) {
+      const d = (x + B / 2 - hillPeakX) / hillHalfW;               // -1 … 0 (peak) … 1
+      const h = snap(hillH * Math.max(0, 1 - d * d));              // rounded hill shape
+      if (h <= 0) continue;
+      g.fillStyle = '#d4b77c';                                     // hazy far-away sand
+      g.fillRect(x, horizon - h, B, h + B * 2);
+      g.fillStyle = '#c4a56a';                                     // shady side, lower slope
+      if (d > .2) g.fillRect(x, horizon - h + B * 2, B, h);
+      g.fillStyle = '#8fb26b';                                     // beach grass along the top
+      g.fillRect(x, horizon - h, B, B);
+      if ((x / B) % 3 === 0) g.fillRect(x, horizon - h - B, B, B); // little grass tufts
+    }
+    const ls = Math.max(2, Math.round(PS * .5));                  // small: it's far away
+    const lhW = LIGHTHOUSE_SPRITE[0].length * ls, lhH = LIGHTHOUSE_SPRITE.length * ls;
+    const lhX = Math.round(hillPeakX - lhW / 2), lhY = horizon - snap(hillH) + ls * 2 - lhH;
+    paintSprite(g, LIGHTHOUSE_SPRITE, LIGHTHOUSE_COLORS, lhX, lhY, ls);
+    shore.lamp = { x: lhX + 5.5 * ls, y: lhY + 4.5 * ls, s: ls };   // where the light shines from
+    Object.assign(document.getElementById('lighthouseSpot').style, {
+      left: (lhX - ls * 3) + 'px', top: (lhY - ls * 3) + 'px',     // a bit of padding: easier to tap
+      width: (lhW + ls * 6) + 'px', height: (lhH + ls * 6) + 'px',
+    });
+
+    // sandcastle on the dry sand near the bottom-left (decoration only)
+    const cs = Math.max(3, PS - 1);
+    paintSprite(g, SANDCASTLE_SPRITE, SANDCASTLE_COLORS,
+                snap(W * .03), snap(H * .96) - SANDCASTLE_SPRITE.length * cs, cs);
+
     shore.bg = bg;
+
+    // crab on the shore (drawn each frame so it can move)
+    const crs = Math.max(2, PS - 2);
+    const crc = document.createElement('canvas');
+    crc.width = CRAB_SPRITE[0].length * crs; crc.height = CRAB_SPRITE.length * crs;
+    paintSprite(crc.getContext('2d'), CRAB_SPRITE, CRAB_COLORS, 0, 0, crs);
+    shore.crab = { img: crc, s: crs, x: W * .15, y: snap(H * .90), range: W * .03 };
 
     // ── sun disc (pre-drawn) ──
     shore.sun = { x: W * .8, y: H * .17, r: Math.max(26, Math.min(W, H) * .07) };
@@ -2395,6 +2537,15 @@
     ctx.globalAlpha = 1;
     ctx.drawImage(shore.sunDisc, sun.x - sun.r, sun.y - sun.r);
 
+    // lighthouse: the lamp blinks, and a soft beam sweeps back and forth
+    const lamp = shore.lamp;
+    const sweep = Math.cos(t * 1.1);                       // -1 → 1: beam pointing left ↔ right
+    ctx.fillStyle = `rgba(255, 240, 160, ${.18 + .22 * Math.abs(sweep)})`;
+    const beamLen = W * .14 * Math.abs(sweep);
+    ctx.fillRect(sweep > 0 ? lamp.x : lamp.x - beamLen, lamp.y - lamp.s, beamLen, lamp.s * 2);
+    ctx.fillStyle = `rgba(255, 250, 200, ${.5 + .5 * Math.abs(Math.sin(t * 2.2))})`;
+    ctx.fillRect(lamp.x - lamp.s * 1.5, lamp.y - lamp.s, lamp.s * 3, lamp.s * 2);
+
     // clouds drift right and wrap around
     shore.clouds.forEach(cl => {
       cl.x += cl.v; if (cl.x > W + 20) cl.x = -cl.w - 20;
@@ -2457,6 +2608,13 @@
       ctx.fillRect(snap(edge + wob * .5), y, B, B);
     }
 
+    // little red crab scuttling sideways on the sand, resting at each end
+    const crab = shore.crab;
+    const swing = Math.max(-1, Math.min(1, Math.sin(t * .7) * 1.6));   // flat spots = pauses
+    const moving = Math.abs(swing) < 1;
+    const crabHop = moving ? Math.round(Math.abs(Math.sin(t * 14)) * -crab.s / 2) : 0;
+    ctx.drawImage(crab.img, Math.round(crab.x + swing * crab.range), crab.y + crabHop);
+
     // the girl, fishing
     ctx.drawImage(shore.girl.img, shore.girl.x, shore.girl.y);
     const gs = shore.girl.s, rod = shore.rod, bob = shore.bobber;
@@ -2512,7 +2670,8 @@
     sc.setAttribute('aria-hidden', 'true');
     stopGulls();
     shore.running = false;
-    document.getElementById('bonnieCard').classList.remove('show');
+    closeBonnie();
+    document.getElementById('lighthouseCard').classList.remove('show');
     // the submarine is waiting front-and-center when you land back in the tank
     sub.x = areaW() / 2 - sub.w / 2;
     sub.t = 0;
@@ -2575,17 +2734,149 @@
     const layer = document.getElementById('gullLayer'); if (layer) layer.innerHTML = '';
   }
   document.getElementById('submarine').addEventListener('click', e => { e.stopPropagation(); surface(); });
+  // clicking empty shore closes whatever pop-up is open
   document.getElementById('shoreScene').addEventListener('click', e => {
     e.stopPropagation();
-    document.getElementById('bonnieCard').classList.remove('show');   // clicking elsewhere closes her card
+    closeBonnie();
+    document.getElementById('lighthouseCard').classList.remove('show');
   });
-  document.getElementById('bonnieSpot').addEventListener('click', e => {
-    e.stopPropagation(); document.getElementById('bonnieCard').classList.add('show');
+
+  // lighthouse (placeholder card for now)
+  const lighthouseCard = document.getElementById('lighthouseCard');
+  document.getElementById('lighthouseSpot').addEventListener('click', e => {
+    e.stopPropagation(); closeBonnie(); lighthouseCard.classList.add('show');
   });
-  document.getElementById('bonnieCard').addEventListener('click', e => e.stopPropagation());
-  document.getElementById('bonnieClose').addEventListener('click', e => {
-    e.stopPropagation(); document.getElementById('bonnieCard').classList.remove('show');
+  lighthouseCard.addEventListener('click', e => e.stopPropagation());
+  document.getElementById('lighthouseClose').addEventListener('click', e => {
+    e.stopPropagation(); lighthouseCard.classList.remove('show');
   });
+
+
+  /* ══════════════════════════════════════════════════════════════
+     TALKING TO BONNIE
+     Click Bonnie and a dialogue box opens along the bottom, like an
+     old video game. Her words type out letter by letter, then you
+     pick what to say back.
+
+     HOW TO ADD MORE CONVERSATION:
+       Every "node" below is one thing Bonnie says.
+         text:    what she says (a function gets the visitor's name, or '')
+         choices: [button text, node to go to next]
+         askName: show a name box instead of buttons
+         end:     close the box a moment after she finishes talking
+       Add a new node, then point a choice at it.
+     ══════════════════════════════════════════════════════════════ */
+  const DIALOGUE = {
+    start: {
+      text: n => n ? `Oh, hi again, ${n}!` : '(Bonnie is watching her bobber very closely.)',
+      choices: [['Hi!', 'hi'], ["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+    },
+    hi: {
+      text: () => "Hi! I'm Bonnie! What's your name?",
+      askName: true,
+    },
+    hiAgain: {                                            // used when she already knows your name
+      text: n => `Hi, ${n}! I still remember your name.`,
+      choices: [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+    },
+    named: {
+      text: n => `Nice to meet you, ${n}! Want to know what I'm up to?`,
+      choices: [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+    },
+    shy: {
+      text: () => "That's okay, mystery friend!",
+      choices: [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+    },
+    doing: {
+      text: () => "Fishing! Nothing's biting yet, but my bobber keeps wiggling.",
+      choices: [['Good luck!', 'luck'], ['Hi!', 'hi'], ['Bye!', 'bye']],
+    },
+    luck: {
+      text: () => 'Thanks! Come back later and see what I catch.',
+      choices: [['Bye!', 'bye']],
+    },
+    bye: {
+      text: n => `See you later${n ? ', ' + n : ''}!`,
+      end: true,
+    },
+  };
+
+  const bonnieDialog = document.getElementById('bonnieDialog');
+  const bdText       = document.getElementById('bdText');
+  const bdChoices    = document.getElementById('bdChoices');
+  let visitorName = '';          // remembered until the page is closed
+  let typingTimer = null, finishTyping = null, closeTimer = null;
+
+  // draw Bonnie's little portrait (the same sprite, smaller) once
+  (function drawPortrait() {
+    const c = document.getElementById('bdPortrait'), sc = 3;
+    c.width = GIRL_SPRITE[0].length * sc; c.height = GIRL_SPRITE.length * sc;
+    paintSprite(c.getContext('2d'), GIRL_SPRITE, GIRL_COLORS, 0, 0, sc);
+  })();
+
+  // type text out one letter at a time; clicking the text finishes it instantly
+  function typeText(str, done) {
+    clearInterval(typingTimer);
+    bdText.textContent = '';
+    let i = 0;
+    finishTyping = () => { clearInterval(typingTimer); bdText.textContent = str; finishTyping = null; done(); };
+    typingTimer = setInterval(() => {
+      bdText.textContent = str.slice(0, ++i);
+      if (i >= str.length) finishTyping();
+    }, 24);
+  }
+  bdText.addEventListener('click', () => { if (finishTyping) finishTyping(); });
+
+  // make one answer button
+  function choiceButton(label, onClick) {
+    const b = document.createElement('button');
+    b.className = 'bd-choice'; b.type = 'button'; b.textContent = label;
+    b.addEventListener('click', e => { e.stopPropagation(); onClick(); });
+    return b;
+  }
+
+  // the little "what's your name?" box
+  function showNameBox() {
+    const input = document.createElement('input');
+    input.className = 'bd-name-input'; input.maxLength = 20;
+    input.placeholder = 'Type your name'; input.setAttribute('aria-label', 'Your name');
+    const submit = () => {
+      const name = input.value.trim();
+      if (!name) return goTo('shy');
+      visitorName = name;
+      goTo('named');
+    };
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    bdChoices.append(input, choiceButton("That's me!", submit), choiceButton("I'd rather not say", () => goTo('shy')));
+    input.focus({ preventScroll: true });
+  }
+
+  // jump to a node: Bonnie says her line, then the choices appear
+  function goTo(key) {
+    if (key === 'hi' && visitorName) key = 'hiAgain';
+    const node = DIALOGUE[key];
+    bdChoices.innerHTML = '';
+    typeText(node.text(visitorName), () => {
+      if (node.askName) showNameBox();
+      else if (node.end) closeTimer = setTimeout(closeBonnie, 1400);
+      else node.choices.forEach(([label, next]) => bdChoices.append(choiceButton(label, () => goTo(next))));
+    });
+  }
+
+  function openBonnie() {
+    clearTimeout(closeTimer);
+    lighthouseCard.classList.remove('show');
+    bonnieDialog.classList.add('show');
+    goTo('start');
+  }
+  function closeBonnie() {
+    clearInterval(typingTimer); clearTimeout(closeTimer); finishTyping = null;
+    bonnieDialog.classList.remove('show');
+  }
+
+  document.getElementById('bonnieSpot').addEventListener('click', e => { e.stopPropagation(); openBonnie(); });
+  bonnieDialog.addEventListener('click', e => e.stopPropagation());
+  document.getElementById('bonnieClose').addEventListener('click', e => { e.stopPropagation(); closeBonnie(); });
   document.getElementById('shoreSub').addEventListener('click', e => { e.stopPropagation(); diveBack(); });
 
 
@@ -3274,7 +3565,7 @@ We're measuring overlighting, energy savings, and safety concerns from
 adaptive lighting changes, to help redesign campus lighting so it's
 both safe and sustainable.`,
       bullets: [
-        'Co-led "Improving Outdoor Lighting Through Retrofitting Kits for Existing Fixtures" with Raquel Rodriguez (GEO \'28).',
+        'Led my project, "Improving Outdoor Lighting Through Retrofitting Kits for Existing Fixtures," and collaborated with another student researcher on fieldwork.',
         'Cleaned and retrofitted existing campus light fixtures instead of replacing them, keeping working parts in use.',
         'Measured each fixture with a spectrometer and found that adding layers of filter film lowered both color temperature and brightness (foot-candles).',
         'Mapped the first installation site: the pathway between Elm Drive and Faculty Road.',
@@ -3940,6 +4231,15 @@ the colors, and programming cues timed to the song.`,
     "kbbbbbbbbbbbk",
     ".kkkkkkkkkkk.",
   ];
+  const CRAB_SPRITE = [           // small red crab: claws up, eyes on stalks, legs out to the sides
+    ".RR.....RR.",
+    "R.R.k.k.R.R",
+    ".R.RRRRR.R.",
+    "..RRRRRRR..",
+    ".R.RrrrR.R.",
+    "R..R...R..R",
+  ];
+  const CRAB_COLORS = { R:'#e0402f', r:'#b02a20', k:'#1b1a22' };
   const CATFISH_SPRITE = [        // faces right, whiskers hanging off the face
     "......kkkk................",
     ".....kDDDk................",
@@ -3959,6 +4259,8 @@ the colors, and programming cues timed to the song.`,
   const SNAILS = [
     { S:'#c9772f', s:'#f2b35c', from: .16, to: .40, y: .58, speed: 2.2 },
     { S:'#9a3f98', s:'#e7a3e4', from: .56, to: .84, y: .86, speed: 1.6 },
+    // the crab only scuttles a short way, faster than a snail, and stops at each end
+    { sprite: CRAB_SPRITE, colors: CRAB_COLORS, from: .46, to: .54, y: .42, speed: 9, rest: 1.2 },
   ];
 
   // Paint a letter-grid sprite onto a fresh canvas
@@ -3985,7 +4287,9 @@ the colors, and programming cues timed to the song.`,
     snailLayer.innerHTML = '';
     const ss = Math.max(2, PS - 1);
     deco.snails = SNAILS.map((sn, i) => {
-      const cv = spriteCanvas(SNAIL_SPRITE, { k:'#4a2f1f', S: sn.S, s: sn.s, b:'#d8ccb0' }, ss);
+      const cv = sn.sprite
+        ? spriteCanvas(sn.sprite, sn.colors, ss)                               // e.g. the crab
+        : spriteCanvas(SNAIL_SPRITE, { k:'#4a2f1f', S: sn.S, s: sn.s, b:'#d8ccb0' }, ss);
       snailLayer.appendChild(cv);
       const old = deco.snailsOld && deco.snailsOld[i];
       return {
@@ -3994,6 +4298,7 @@ the colors, and programming cues timed to the song.`,
         x: old ? old.frac * W : W * (sn.from + sn.to) / 2,
         dir: old ? old.dir : (i % 2 ? -1 : 1),
         speed: sn.speed * ss,                              // pixels per second
+        rest: sn.rest || 0, wait: 0, isCrab: !!sn.sprite,
       };
     });
 
@@ -4020,11 +4325,19 @@ the colors, and programming cues timed to the song.`,
     deco.last = now;
 
     deco.snails.forEach(sn => {
-      sn.x += sn.dir * sn.speed * dt;
-      if (sn.x < sn.minX) { sn.x = sn.minX; sn.dir = 1; }  // turn around at the ends
-      if (sn.x > sn.maxX) { sn.x = sn.maxX; sn.dir = -1; }
-      const inch = Math.round(Math.sin(now / 300) * .5);    // tiny inch-worm wiggle
-      sn.cv.style.transform = `translate(${Math.round(sn.x) + inch}px, ${sn.y}px) scaleX(${sn.dir})`;
+      if (sn.wait > 0) sn.wait -= dt;                       // resting at the end of its path
+      else {
+        sn.x += sn.dir * sn.speed * dt;
+        if (sn.x < sn.minX) { sn.x = sn.minX; sn.dir = 1;  sn.wait = sn.rest; }   // turn around at the ends
+        if (sn.x > sn.maxX) { sn.x = sn.maxX; sn.dir = -1; sn.wait = sn.rest; }
+      }
+      if (sn.isCrab) {                                      // crabs walk sideways, so no flipping, just a little hop
+        const hop = sn.wait > 0 ? 0 : Math.round(Math.abs(Math.sin(now / 90)) * -2);
+        sn.cv.style.transform = `translate(${Math.round(sn.x)}px, ${sn.y + hop}px)`;
+      } else {
+        const inch = Math.round(Math.sin(now / 300) * .5);  // tiny inch-worm wiggle
+        sn.cv.style.transform = `translate(${Math.round(sn.x) + inch}px, ${sn.y}px) scaleX(${sn.dir})`;
+      }
     });
 
     const cf = deco.catfish;
