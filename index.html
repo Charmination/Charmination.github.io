@@ -349,10 +349,15 @@
     .shore-scene {
       position: absolute; inset: 0; z-index: 9800;
       transform: translateY(100%);            /* parked below; slides UP when you surface */
-      transition: transform .9s cubic-bezier(.6,0,.3,1);
+      /* sliding back DOWN when you dive: it stays visible for the whole slide,
+         and only hides once the .9s slide is over */
+      transition: transform .9s cubic-bezier(.6,0,.3,1), visibility 0s linear .9s;
       overflow: hidden; visibility: hidden;
     }
-    .shore-scene.show { transform: translateY(0); visibility: visible; }
+    .shore-scene.show {
+      transform: translateY(0); visibility: visible;
+      transition: transform .9s cubic-bezier(.6,0,.3,1), visibility 0s;
+    }
     #shoreCanvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
     .shore-sub { position: absolute; z-index: 2; cursor: pointer; animation: subBob 2.4s ease-in-out infinite; }
     .shore-sub:hover { filter: brightness(1.15) drop-shadow(0 0 8px rgba(255,255,255,.9)); }
@@ -2650,14 +2655,16 @@
     sc.setAttribute('aria-hidden', 'false');
     sc.classList.add('show');
     startGulls();
-    shore.running = true; requestAnimationFrame(shoreLoop);
+    clearTimeout(shore.stopTimer);
+    if (!shore.running) { shore.running = true; requestAnimationFrame(shoreLoop); }
   }
   function diveBack() {
     const sc = document.getElementById('shoreScene');
     sc.classList.remove('show');
     sc.setAttribute('aria-hidden', 'true');
     stopGulls();
-    shore.running = false;
+    clearTimeout(shore.stopTimer);
+    shore.stopTimer = setTimeout(() => { shore.running = false; }, 950);   // keep the waves moving while it slides down
     closeBonnie();
     document.getElementById('lighthouseCard').classList.remove('show');
     // the submarine is waiting front-and-center when you land back in the tank
