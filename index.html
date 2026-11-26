@@ -327,6 +327,18 @@
       padding-left: 1em; margin-bottom: 14px;
     }
 
+    /* Small photo gallery under the About Me text */
+    .about-gallery {
+      display: grid; gap: 10px; margin-top: 22px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .about-gallery figure { margin: 0; }
+    .about-gallery img {
+      width: 100%; aspect-ratio: 3 / 4; object-fit: cover; object-position: center 30%; display: block;
+      border-radius: 12px; border: 3px solid rgba(129,216,208,.6);
+      box-shadow: 0 4px 14px rgba(0,0,0,.12);
+    }
+
     .about-photo-col {
       flex: 0 0 44%; display: flex;
       align-items: center; justify-content: center;
@@ -1087,6 +1099,14 @@
           </p>
           <!-- Jumps straight to the Experience panel -->
           <button class="project-link-btn about-exp-btn" onclick="openPanel('cpExp')">See my experience →</button>
+
+          <!-- Photo gallery: add more <figure> blocks to show more photos -->
+          <div class="about-gallery">
+            <figure><img src="images/about/about-3.jpg" alt="Bonnie in a Class of 2028 sweater on Princeton's campus" loading="lazy"></figure>
+            <figure><img src="images/about/about-4.jpg" alt="Bonnie with the ECE banner at Princeton" loading="lazy"></figure>
+            <figure><img src="images/about/about-2.jpg" alt="Nassau Hall in the fall" loading="lazy"></figure>
+            <figure><img src="images/about/about-1.jpg" alt="Bonnie at an event in a black dress" loading="lazy"></figure>
+          </div>
         </div>
         <div class="about-photo-col">
           <!-- Replace with your actual photo path -->
