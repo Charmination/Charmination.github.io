@@ -327,6 +327,15 @@
       padding-left: 1em; margin-bottom: 14px;
     }
 
+    /* The cave on the sand + its pop-up */
+    #caveBtn { position: absolute; z-index: 6; cursor: pointer; background: none; border: none; outline: none; padding: 0; }
+    #caveBtn canvas { display: block; image-rendering: pixelated; transition: filter .15s; }
+    #caveBtn:hover canvas { filter: brightness(1.25); }
+    #caveBtn:hover .bottle-label { opacity: 1; }
+    #caveOverlay { background: linear-gradient(160deg, #1d2c4a, #0b1222); border-color: #5b6f99; }
+    .cave-overlay .ov-title { color: #cfe0ff; }
+    .cave-text { text-align: center; color: #cfe0ff; font-size: clamp(8px, 1vw, 11px); line-height: 2; padding: 6px 0 4px; }
+
     /* Small photo gallery under the About Me text */
     .about-gallery {
       display: grid; gap: 10px; margin-top: 22px;
@@ -1078,9 +1087,14 @@
     <!-- Giant clam (left side of tank) — opens pearl of wisdom -->
     <button class="floor-obj" id="clamBtn" aria-label="Open clam"></button>
 
+    <!-- The cave (right of the bottle) — a spot for a future feature -->
+    <button id="caveBtn" aria-label="Explore the cave">
+      <span class="bottle-label">The Cave</span>
+    </button>
+
     <!-- Message-in-a-bottle (between clam and chest) — opens feedback form -->
     <button id="bottleBtn" aria-label="Leave a message">
-      <span class="bottle-label">message in a bottle</span>
+      <span class="bottle-label">Message in a Bottle</span>
     </button>
 
 
@@ -1208,6 +1222,13 @@
       </form>
     </div>
 
+
+    <!-- ── THE CAVE pop-up (placeholder until we decide what goes here) ── -->
+    <div class="overlay-base cave-overlay" id="caveOverlay">
+      <button class="ov-close" id="caveClose" aria-label="Close">X</button>
+      <div class="ov-title">The Cave</div>
+      <div class="cave-text">To be constructed.</div>
+    </div>
 
     <!-- ── THE CONTACT CLAM — opens when you click the clam ──
          To add another way to reach you (email, Instagram...), copy one
@@ -1668,6 +1689,55 @@
     buildChestDOM(document.getElementById('chestBtn'), CS,  sandH, chestOpen);
     buildClamDOM (document.getElementById('clamBtn'),  CLS, sandH, clamOpen);
     buildBottleDOM();
+    buildCaveDOM(sandH);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     THE CAVE — a rocky blue mound with a dark, gradient-filled opening.
+     Sits on the sand just right of the bottle.
+     ══════════════════════════════════════════════════════════════ */
+  function buildCaveDOM(sandH) {
+    const el = document.getElementById('caveBtn');
+    const COLS = 30, ROWS = 18;
+    const bottleRight = 28 + 20 * CLS + 18 + 22 * BS;
+    const chestLeft   = tankW() - 24 - 20 * CS;
+    // same pixel size as the clam, but shrink it if it would bump into the chest
+    let s = CLS;
+    while (s > 1 && bottleRight + 14 + COLS * s > chestLeft - 8) s--;
+    const W = COLS * s, H = ROWS * s;
+    el.style.left   = (bottleRight + 14) + 'px';
+    el.style.bottom = (sandH - Math.round(H * .12)) + 'px';
+    el.style.width  = W + 'px';
+    el.style.height = H + 'px';
+
+    const old = el.querySelector('canvas'); if (old) old.remove();
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    // rocky mound: a rounded dome, built row by row out of pixel blocks
+    for (let y = 0; y < ROWS; y++) {
+      const t = y / (ROWS - 1);                         // 0 at top → 1 at bottom
+      const half = Math.round((COLS / 2) * Math.sqrt(Math.min(1, t * 1.15 + .08)));
+      for (let x = COLS / 2 - half; x < COLS / 2 + half; x++) {
+        const edge = (x === COLS / 2 - half || x === COLS / 2 + half - 1 || y === 0);
+        const speckle = ((x * 7 + y * 13) % 11) === 0;
+        ctx.fillStyle = edge ? '#22325a' : speckle ? '#4f6799' : (y < 4 ? '#3d5487' : '#33487a');
+        ctx.fillRect(x * s, y * s, s, s);
+      }
+    }
+
+    // cave mouth: an arch filled with a dark gradient (black at the back)
+    const mx = COLS / 2, mw = 7, top = 7;
+    const g = ctx.createLinearGradient(0, top * s, 0, H);
+    g.addColorStop(0, '#16213a'); g.addColorStop(.6, '#070b16'); g.addColorStop(1, '#000');
+    ctx.fillStyle = g;
+    for (let y = top; y < ROWS; y++) {
+      const t = (y - top) / 3;
+      const half = y - top < 3 ? Math.round(mw * Math.sqrt(Math.min(1, t))) : mw;
+      ctx.fillRect((mx - half) * s, y * s, half * 2 * s, s);
+    }
+    el.insertBefore(c, el.firstChild);
   }
 
 
@@ -2194,6 +2264,18 @@
   });
 
   // Close small floating overlays (feedback, pearl, chest popup)
+  // Cave: show the "to be constructed" pop-up
+  document.getElementById('caveBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    const co = document.getElementById('caveOverlay'), was = co.classList.contains('show');
+    closeAll();
+    if (!was) { posOverlay(co); co.classList.add('show'); }
+  });
+  document.getElementById('caveOverlay').addEventListener('click', e => e.stopPropagation());
+  document.getElementById('caveClose').addEventListener('click', e => {
+    e.stopPropagation(); document.getElementById('caveOverlay').classList.remove('show');
+  });
+
   function closeSmallOverlays() {
     document.querySelectorAll('.overlay-base, .pearl-overlay').forEach(n => n.classList.remove('show'));
     document.getElementById('chestItemPopup').classList.remove('show');
