@@ -378,6 +378,12 @@
     .shore-card.show { display: block; }
     .shore-card-title { font-size: clamp(10px, 1.3vw, 14px); margin-bottom: 12px; color: #0a8f8a; letter-spacing: 2px; }
     .shore-card-text  { font-size: clamp(7px, .9vw, 10px); line-height: 2; }
+    /* course list inside the Coursework Castle card */
+    .course-term { font-size: clamp(7px, .85vw, 9px); color: #0a8f8a; margin: 14px 0 6px; text-align: left; }
+    .course-item { font-size: clamp(7px, .85vw, 9px); line-height: 1.8; text-align: left; padding: 6px 8px;
+                   background: #ffe7b3; border: 2px solid #3a2414; border-radius: 6px; margin-bottom: 6px; }
+    .course-item b { color: #a8452f; }
+    .shore-card.wide { width: min(440px, 90%); max-height: 80%; overflow-y: auto; }
 
     /* ── Day/night clock in the bottom-right corner of the shore ── */
     .shore-clock {
@@ -944,6 +950,18 @@
        ════════════════════════════════════════════════ */
     .bottom-bar { display: flex; flex-direction: column; align-items: center; padding: 6px 0 7px; background: #097a77; flex-shrink: 0; }
 
+    /* FEED shows in the tank, FISH/REEL shows on the shore */
+    #fishBtn { display: none; }
+    .bottom-bar.shore-mode #feedBtn { display: none; }
+    .bottom-bar.shore-mode #fishBtn { display: inline-block; }
+    #fishBtn:disabled { opacity: .6; cursor: wait; }
+
+    /* "You caught..." card on the shore */
+    .catch-art   { display: block; margin: 4px auto 12px; image-rendering: pixelated; }
+    .catch-rarity { display: inline-block; margin-top: 10px; padding: 4px 8px; border: 2px solid #3a2414;
+                    border-radius: 6px; font-size: clamp(6px, .8vw, 8px); background: #ffe7b3; }
+    .catch-count { margin-top: 10px; font-size: clamp(6px, .75vw, 8px); color: #7a5a3a; }
+
     .feed-btn {
       font-family: 'Press Start 2P', monospace;
       font-size: clamp(9px,1.2vw,14px);
@@ -1387,6 +1405,38 @@
         <span class="fish-label">Lighthouse</span>
       </div>
 
+      <div class="shore-spot" id="castleSpot" role="button" aria-label="Coursework Castle">
+        <span class="fish-label">Coursework Castle</span>
+      </div>
+      <div class="shore-spot" id="boatSpot" role="button" aria-label="Someday Sailboat">
+        <span class="fish-label">Someday Sailboat</span>
+      </div>
+
+      <!-- Coursework Castle: the course list is filled in from COURSEWORK in the script -->
+      <div class="shore-card wide" id="castleCard">
+        <button class="ov-close" aria-label="Close">X</button>
+        <div class="shore-card-title">Coursework Castle</div>
+        <div class="shore-card-text">Every course is another brick in the castle.</div>
+        <div id="courseList"></div>
+      </div>
+
+      <!-- Someday Sailboat: where I'm headed (placeholder for now) -->
+      <div class="shore-card" id="boatCard">
+        <button class="ov-close" aria-label="Close">X</button>
+        <div class="shore-card-title">Someday Sailboat</div>
+        <div class="shore-card-text">Where I'm sailing next. The plans are still out on the horizon, so check back soon.</div>
+      </div>
+
+      <!-- What Bonnie just reeled in (filled in by the fishing code) -->
+      <div class="shore-card" id="catchCard">
+        <button class="ov-close" aria-label="Close">X</button>
+        <div class="shore-card-title" id="catchTitle"></div>
+        <canvas class="catch-art" id="catchArt"></canvas>
+        <div class="shore-card-text" id="catchText"></div>
+        <div class="catch-rarity" id="catchRarity"></div>
+        <div class="catch-count" id="catchCount"></div>
+      </div>
+
       <!-- Little clock: switches the shore between day and night -->
       <button class="shore-clock" id="shoreClock" type="button" aria-label="Switch to night">
         <canvas id="clockIcon"></canvas><span id="clockLabel">Day</span>
@@ -1394,7 +1444,7 @@
 
       <!-- Lighthouse pop-up (placeholder until we decide what it does) -->
       <div class="shore-card" id="lighthouseCard">
-        <button class="ov-close" id="lighthouseClose" aria-label="Close">X</button>
+        <button class="ov-close" aria-label="Close">X</button>
         <div class="shore-card-title">The Lighthouse</div>
         <div class="shore-card-text">The light is on, but nobody's home yet. Something is coming here soon.</div>
       </div>
@@ -1419,6 +1469,8 @@
        ══════════════════════════════════════════════ -->
   <div class="bottom-bar">
     <button class="feed-btn" id="feedBtn">FEED</button>
+    <!-- On the shore, FEED is swapped for FISH (cast the line) / REEL (pull it in) -->
+    <button class="feed-btn" id="fishBtn" type="button">FISH</button>
     <div class="tank-hint" id="tankHint" hidden>
       <span class="hint-awake">Fish = navigate · Bottle = leave a message · Chest = Bonnie's Treasures · Clam = contact</span>
       <span class="hint-sleep">Lights off. The fish are resting but still clickable.</span>
@@ -2455,10 +2507,14 @@
       width: (lhW + ls * 6) + 'px', height: (lhH + ls * 6) + 'px',
     });
 
-    // sandcastle on the dry sand near the bottom-left (decoration only)
+    // Coursework Castle: the sandcastle near the bottom-left (click it to see courses)
     const cs = Math.max(3, PS - 1);
-    paintSprite(g, SANDCASTLE_SPRITE, SANDCASTLE_COLORS,
-                snap(W * .03), snap(H * .96) - SANDCASTLE_SPRITE.length * cs, cs);
+    const castleX = snap(W * .03), castleY = snap(H * .96) - SANDCASTLE_SPRITE.length * cs;
+    paintSprite(g, SANDCASTLE_SPRITE, SANDCASTLE_COLORS, castleX, castleY, cs);
+    Object.assign(document.getElementById('castleSpot').style, {
+      left: (castleX - cs * 2) + 'px', top: (castleY - cs * 2) + 'px',
+      width: (SANDCASTLE_SPRITE[0].length + 4) * cs + 'px', height: (SANDCASTLE_SPRITE.length + 4) * cs + 'px',
+    });
 
     shore.bg = bg;
 
@@ -2522,6 +2578,7 @@
     BOAT_SPRITE.forEach((row, y) => [...row].forEach((ch, x) => {
       if (ch === '.') return; bx.fillStyle = BOAT_COLORS[ch]; bx.fillRect(x * bs, y * bs, bs, bs);
     }));
+    document.getElementById('boatSpot').style.width = '';   // re-measured on the next frame
     shore.boat = {
       img: bc,
       startX: shoreX(0) + B * 8,                          // just past the foam at the far end of the beach
@@ -2631,6 +2688,13 @@
     boat.x += boat.speed;
     if (boat.x > W + 10) boat.x = boat.startX;
     ctx.drawImage(boat.img, Math.round(boat.x), Math.round(boat.y + Math.sin(t * 1.5) * .8));
+    const bspot = document.getElementById('boatSpot');      // click target sails along with the boat
+    bspot.style.transform = `translate(${Math.round(boat.x - 6)}px, ${Math.round(boat.y - 6)}px)`;
+    if (!bspot.style.width) {
+      bspot.style.left = bspot.style.top = '0px';
+      bspot.style.width  = boat.img.width  + 12 + 'px';
+      bspot.style.height = boat.img.height + 12 + 'px';
+    }
 
     // ── waves: every ~5 s a wave rolls in, crashes, washes up the sand, and soaks in ──
     const PERIOD = 5.2;
@@ -2688,9 +2752,28 @@
       ctx.fillStyle = i < 3 ? '#3a2414' : '#8a5a2b';          // dark grip, wooden rod
       ctx.fillRect(Math.round(rod.hx + (rod.tx - rod.hx) * k + sway * k), Math.round(rod.hy + (rod.ty - rod.hy) * k), gs, gs);
     }
-    // bobber bobs on the surface and now and then dips (a nibble!)
-    const nibble = (t % 7) > 6.2 ? Math.sin((t % 7 - 6.2) * 20) * gs * 1.2 : 0;
-    const bx = bob.x, byy = bob.y + Math.sin(t * 2) * gs * .5 + nibble;
+    // Where is the bobber? It depends on what Bonnie is doing (see FISHING below):
+    //   idle    → dangling just under the rod tip
+    //   casting → flying out over the water in an arc
+    //   cast    → floating, bobbing, and now and then dipping (a nibble!)
+    //   reeling → being pulled back to the rod tip
+    const tipX = rod.tx + sway, tipY = rod.ty + gs * 4;
+    const nibble = fishing.state === 'cast' && fishingNibble(t) ? Math.sin((t % 7 - 6.2) * 20) * gs * 1.2 : 0;
+    const floatY = bob.y + Math.sin(t * 2) * gs * .5 + nibble;
+    const k = Math.min(1, (t - fishing.since) / fishing.dur);    // 0 → 1 through a cast or reel
+    let bx, byy;
+    if (fishing.state === 'idle') {
+      bx = tipX; byy = tipY + Math.sin(t * 1.4) * gs * .4;
+    } else if (fishing.state === 'casting') {
+      bx = tipX + (bob.x - tipX) * k;
+      byy = tipY + (floatY - tipY) * k - Math.sin(k * Math.PI) * gs * 18;   // arc up and over
+    } else if (fishing.state === 'reeling') {
+      const e = k * k;                                         // starts slow, then zips in
+      bx = bob.x + (tipX - bob.x) * e;
+      byy = floatY + (tipY - floatY) * e - Math.sin(e * Math.PI) * gs * 4;
+    } else {
+      bx = bob.x; byy = floatY;
+    }
     // fishing line: a gentle sagging curve from rod tip to the bobber
     ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = Math.max(1, gs / 3);
     ctx.beginPath();
@@ -2701,8 +2784,12 @@
     const bs = gs * 2;                                          // bobber pixel size
     ctx.fillStyle = '#e8343c'; ctx.fillRect(Math.round(bx), Math.round(byy), bs, bs);
     ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(bx), Math.round(byy - bs / 2), bs, bs / 2);
-    ctx.fillStyle = 'rgba(255,255,255,.6)';                    // little ripple ring
-    ctx.fillRect(Math.round(bx - bs / 2), Math.round(byy + bs), bs * 2, Math.max(2, gs / 2));
+    if (fishing.state === 'cast') {
+      ctx.fillStyle = 'rgba(255,255,255,.6)';                  // little ripple ring on the water
+      ctx.fillRect(Math.round(bx - bs / 2), Math.round(byy + bs), bs * 2, Math.max(2, gs / 2));
+    }
+    // a fresh catch dangles under the bobber
+    if (fishing.dangle) ctx.drawImage(fishing.dangle, Math.round(bx + bs / 2 - fishing.dangle.width / 2), Math.round(byy + bs));
   }
 
   function shoreLoop() {
@@ -2723,6 +2810,7 @@
     const sc = document.getElementById('shoreScene');
     sc.setAttribute('aria-hidden', 'false');
     sc.classList.add('show');
+    document.querySelector('.bottom-bar').classList.add('shore-mode');   // FEED → FISH
     startGulls();
     clearTimeout(shore.stopTimer);
     if (!shore.running) { shore.running = true; requestAnimationFrame(shoreLoop); }
@@ -2732,10 +2820,12 @@
     sc.classList.remove('show');
     sc.setAttribute('aria-hidden', 'true');
     stopGulls();
+    document.querySelector('.bottom-bar').classList.remove('shore-mode'); // FISH → FEED
+    resetFishing();
     clearTimeout(shore.stopTimer);
     shore.stopTimer = setTimeout(() => { shore.running = false; }, 950);   // keep the waves moving while it slides down
     closeBonnie();
-    document.getElementById('lighthouseCard').classList.remove('show');
+    closeShoreCards();
     // the submarine is waiting front-and-center when you land back in the tank
     sub.x = areaW() / 2 - sub.w / 2;
     sub.t = 0;
@@ -2802,7 +2892,7 @@
   document.getElementById('shoreScene').addEventListener('click', e => {
     e.stopPropagation();
     closeBonnie();
-    document.getElementById('lighthouseCard').classList.remove('show');
+    closeShoreCards();
   });
 
   // day/night clock: a tiny pixel clock face, and a button that flips the sky
@@ -2835,14 +2925,145 @@
     if (!shore.running) drawShoreFrame();
   });
 
-  // lighthouse (placeholder card for now)
-  const lighthouseCard = document.getElementById('lighthouseCard');
-  document.getElementById('lighthouseSpot').addEventListener('click', e => {
-    e.stopPropagation(); closeBonnie(); lighthouseCard.classList.add('show');
+  /* ══════════════════════════════════════════════════════════════
+     FISHING (shore only)
+     FISH → Bonnie casts her line.  The button turns into REEL.
+     REEL → she pulls it back in and a random roll decides the catch.
+     Reeling in right while the bobber is dipping (a nibble) means
+     something is definitely on the hook, and rare fish are likelier.
+
+     CATCHES: each has a weight. Bigger weight = more common.
+       chance of one catch = its weight ÷ all weights added up
+     ══════════════════════════════════════════════════════════════ */
+  const CATCHES = [
+    { name: null,            weight: 30 },                 // nothing bit
+    { name: 'Old Boot',      weight: 12, rarity: 'Junk',     text: "Someone's very soggy boot.",
+      colors: { k:'#2a1a10', B:'#7a4a2a' },
+      sprite: ["..kkkk...", "..kBBk...", "..kBBk...", "..kBBkkkk", "..kBBBBBk", "..kkkkkkk"] },
+    { name: 'Sardine',       weight: 26, rarity: 'Common',   text: 'Small, shiny, and a little slippery.',
+      colors: { k:'#2f4a5a', B:'#a9c7d6', b:'#e3f1f7', e:'#111111' },
+      sprite: [".kkkkkk...", "kBbBBbBk.k", "keBbBBbBkk", "kBbBBbBk.k", ".kkkkkk..."] },
+    { name: 'Clownfish',     weight: 16, rarity: 'Uncommon', text: 'Bright orange, with white stripes.',
+      colors: { k:'#3a1a0a', B:'#f07a1a', b:'#ffffff', e:'#111111' },
+      sprite: [".kkkkkk...", "kBbBBbBk.k", "keBbBBbBkk", "kBbBBbBk.k", ".kkkkkk..."] },
+    { name: 'Pufferfish',    weight: 10, rarity: 'Uncommon', text: 'It puffed up the moment it saw Bonnie.',
+      colors: { k:'#4a3a10', B:'#f2d36b', b:'#fff4c4', e:'#111111' },
+      sprite: ["...kkk...", "..kBBBk..", ".kBeBBBk.", "kBBBBBBBk", ".kBbbbBk.", "..kkkkk.."] },
+    { name: 'Golden Koi',    weight: 5,  rarity: 'Rare',     text: 'A shimmering golden koi. Lucky!',
+      colors: { k:'#6a3a00', B:'#ffc93c', b:'#fff1b0', e:'#111111' },
+      sprite: [".kkkkkk...", "kBbBBbBk.k", "keBbBBbBkk", "kBbBBbBk.k", ".kkkkkk..."] },
+  ];
+
+  const fishing = { state: 'idle', since: 0, dur: 1, dangle: null, caught: 0 };
+  const fishBtn = document.getElementById('fishBtn');
+
+  // the bobber dips for about a second out of every seven
+  function fishingNibble(t) { return (t % 7) > 6.2; }
+
+  // pick a catch: walk through the weights until the random number lands
+  function rollCatch(nibbling) {
+    const table = CATCHES.map(c => ({ ...c,
+      weight: !nibbling ? c.weight
+            : c.name === null ? 0                                  // a nibble means something's there
+            : c.rarity === 'Rare' ? c.weight * 3 : c.weight }));   // and rare fish are 3x likelier
+    let roll = Math.random() * table.reduce((sum, c) => sum + c.weight, 0);
+    for (const c of table) { roll -= c.weight; if (roll < 0) return c; }
+    return table[0];
+  }
+
+  function catchCanvas(c, sc) {
+    const cv = document.createElement('canvas');
+    cv.width = c.sprite[0].length * sc; cv.height = c.sprite.length * sc;
+    paintSprite(cv.getContext('2d'), c.sprite, c.colors, 0, 0, sc);
+    return cv;
+  }
+
+  function setFishState(state, dur) {
+    fishing.state = state; fishing.since = shore.t; fishing.dur = dur || 1;
+  }
+
+  function showCatch(c) {
+    const card = document.getElementById('catchCard');
+    const art  = document.getElementById('catchArt');
+    if (c.name) {
+      fishing.caught++;
+      const article = /^[AEIOU]/.test(c.name) ? 'an' : 'a';   // "an Old Boot", "a Sardine"
+      document.getElementById('catchTitle').textContent = `You caught ${article} ${c.name}!`;
+      document.getElementById('catchText').textContent  = c.text;
+      document.getElementById('catchRarity').textContent = c.rarity;
+      document.getElementById('catchRarity').style.display = '';
+      const big = catchCanvas(c, 6);
+      art.width = big.width; art.height = big.height; art.getContext('2d').drawImage(big, 0, 0);
+      art.style.display = '';
+    } else {
+      document.getElementById('catchTitle').textContent = 'Nothing this time';
+      document.getElementById('catchText').textContent  = 'The hook came back empty. Try reeling in while the bobber dips!';
+      document.getElementById('catchRarity').style.display = 'none';
+      art.style.display = 'none';
+    }
+    document.getElementById('catchCount').textContent = `Catches so far: ${fishing.caught}`;
+    closeBonnie(); closeShoreCards(); card.classList.add('show');
+  }
+
+  fishBtn.addEventListener('click', () => {
+    if (fishing.state === 'idle') {                          // FISH: cast the line out
+      closeShoreCards();
+      fishing.dangle = null;
+      setFishState('casting', .9);
+      fishBtn.disabled = true;
+      getAC().resume().then(() => sfxBottle());
+      setTimeout(() => { setFishState('cast'); fishBtn.textContent = 'REEL'; fishBtn.disabled = false; }, 900);
+    } else if (fishing.state === 'cast') {                   // REEL: pull it in and see what bit
+      const c = rollCatch(fishingNibble(shore.t));
+      fishing.dangle = c.name ? catchCanvas(c, Math.max(2, shore.girl.s - 1)) : null;
+      setFishState('reeling', 1.1);
+      fishBtn.disabled = true;
+      setTimeout(() => {
+        setFishState('idle');
+        fishBtn.textContent = 'FISH'; fishBtn.disabled = false;
+        showCatch(c);
+      }, 1100);
+    }
   });
-  lighthouseCard.addEventListener('click', e => e.stopPropagation());
-  document.getElementById('lighthouseClose').addEventListener('click', e => {
-    e.stopPropagation(); lighthouseCard.classList.remove('show');
+
+  // back to a fresh start (used when diving back down)
+  function resetFishing() {
+    setFishState('idle'); fishing.dangle = null;
+    fishBtn.textContent = 'FISH'; fishBtn.disabled = false;
+  }
+
+  /* ── Coursework Castle: the courses taken so far ──
+     To add a course, add a line under the right term (newest term first). */
+  const COURSEWORK = [
+    { term: 'Fall 2026', courses: [
+      ['ECE 302', 'Robotics & Autonomous Systems (Car Lab)'],
+    ] },
+    { term: 'Spring 2026', courses: [
+      ['ECE 203', 'Final lab: Heart-Rate-Responsive Pump'],
+      ['Lighting Design', 'Final project: lighting design for "For the First Time in Forever"'],
+    ] },
+  ];
+  document.getElementById('courseList').innerHTML = COURSEWORK.map(t =>
+    `<div class="course-term">${t.term}</div>` +
+    t.courses.map(([code, name]) => `<div class="course-item"><b>${code}</b> · ${name}</div>`).join('')
+  ).join('');
+
+  /* ── Shore pop-up cards: lighthouse, castle, sailboat ──
+     Each click target opens its card; only one card is open at a time. */
+  const lighthouseCard = document.getElementById('lighthouseCard');   // (also closed by diveBack)
+  function closeShoreCards() {
+    document.querySelectorAll('.shore-card').forEach(c => c.classList.remove('show'));
+  }
+  const catchCard = document.getElementById('catchCard');
+  catchCard.addEventListener('click', e => e.stopPropagation());
+  catchCard.querySelector('.ov-close').addEventListener('click', e => { e.stopPropagation(); catchCard.classList.remove('show'); });
+  [['lighthouseSpot', 'lighthouseCard'], ['castleSpot', 'castleCard'], ['boatSpot', 'boatCard']].forEach(([spotId, cardId]) => {
+    const card = document.getElementById(cardId);
+    document.getElementById(spotId).addEventListener('click', e => {
+      e.stopPropagation(); closeBonnie(); closeShoreCards(); card.classList.add('show');
+    });
+    card.addEventListener('click', e => e.stopPropagation());
+    card.querySelector('.ov-close').addEventListener('click', e => { e.stopPropagation(); card.classList.remove('show'); });
   });
 
 
@@ -2959,7 +3180,7 @@
 
   function openBonnie() {
     clearTimeout(closeTimer);
-    lighthouseCard.classList.remove('show');
+    closeShoreCards();
     bonnieDialog.classList.add('show');
     goTo('start');
   }
