@@ -1516,31 +1516,67 @@
   }
 
   // Build the bottle DOM element and position it between clam and chest
+  /* The bottle is wedged into the sand at a tilt: cork end up, base buried.
+     1) draw the flat bottle on a scratch canvas
+     2) rotate it onto the real canvas (pixel-sharp, no blur)
+     3) cut off the buried part and pile a little mound of sand over the cut */
+  const BOTTLE_TILT_DEG = 58;      // how far it leans (0 = lying flat, 90 = straight up)
+  const BOTTLE_BURIED   = 0.30;    // fraction of the bottle hidden under the sand
+
   function buildBottleDOM() {
     const el    = document.getElementById('bottleBtn');
     const sandH = Math.round(tankH() * SAND_FRAC);
-    const W = 22 * BS, H = 10 * BS;
-    const sub   = Math.round(H * 0.22);
+    const L = 22 * BS, T = 10 * BS;                 // flat bottle: length × thickness
 
-    // Position just to the right of the clam
+    // 1) flat bottle
+    const flat = document.createElement('canvas');
+    flat.width = L; flat.height = T;
+    drawBottle(flat.getContext('2d'), BS);
+
+    // 2) rotate it (clockwise, so the cork on the left swings up)
+    const a = BOTTLE_TILT_DEG * Math.PI / 180;
+    const W = Math.ceil(L * Math.cos(a) + T * Math.sin(a)) + 2 * BS;
+    const H = Math.ceil(L * Math.sin(a) + T * Math.cos(a)) + 2 * BS;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(a);
+    ctx.drawImage(flat, -L / 2, -T / 2);
+    ctx.restore();
+
+    // 3) bury the bottom part and add a small sand mound where it goes in
+    const cutY  = Math.round(H * (1 - BOTTLE_BURIED) / BS) * BS;
+    ctx.clearRect(0, cutY, W, H - cutY);
+    const sand  = ['#e8c96a', '#d4a840', '#c99a35'];
+    const moundW = Math.round(W * 0.62 / BS);       // in sand pixels
+    const mx0    = Math.round((W * 0.58) / BS - moundW / 2);
+    for (let r = 0; r < 3; r++) {                   // 3 rows: narrow on top, wide at the base
+      const inset = 2 - r;
+      for (let k = inset; k < moundW - inset; k++) {
+        ctx.fillStyle = sand[(k + r) % 3];
+        ctx.fillRect((mx0 + k) * BS, cutY - (2 - r) * BS, BS, BS);
+      }
+    }
+    const finalH = cutY + BS;                        // keep one row of sand under the cut
+    const out = document.createElement('canvas');
+    out.width = W; out.height = finalH;
+    out.getContext('2d').drawImage(cv, 0, 0);
+
+    // place it just right of the clam, with the mound sitting on the sand line
     const leftX = 28 + (20 * CLS) + 18;
     el.style.cssText = `
       position:absolute; z-index:7;
-      left:${leftX}px; bottom:${sandH - sub}px;
-      width:${W}px; height:${H}px;
+      left:${leftX}px; bottom:${sandH - 2 * BS}px;
+      width:${W}px; height:${finalH}px;
       cursor:pointer; background:none; border:none; outline:none; padding:0;
     `;
-
     const old = el.querySelector('canvas');
     if (old) old.remove();
-
-    const cv = document.createElement('canvas');
-    cv.width = W; cv.height = H;
-    cv.style.cssText = `display:block;image-rendering:pixelated;width:${W}px;height:${H}px;`;
-    const ctx = cv.getContext('2d');
-    ctx.clearRect(0, 0, W, H);
-    drawBottle(ctx, BS);
-    el.insertBefore(cv, el.firstChild);
+    out.style.cssText = `display:block;image-rendering:pixelated;width:${W}px;height:${finalH}px;`;
+    el.insertBefore(out, el.firstChild);
   }
 
 
