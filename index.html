@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bonnie Peng's Aquarium</title>
+  <title>Bonnie Peng's Aquarium (Personal Website)</title>
   <!-- Press Start 2P = pixel/retro font from Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
@@ -37,32 +37,43 @@
 
 
     /* ════════════════════════════════════════════════
-       LAMP — top-right dark-mode toggle
+       LAMP — pixel Tiffany ceiling lamp (top-right). Click the shade or
+       its pull string to turn the aquarium light on/off.
        ════════════════════════════════════════════════ */
     .lamp-btn {
-      position: absolute; top: 14px; right: 18px; z-index: 20;
-      background: none; border: none; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      position: absolute; top: 0; right: 14px; z-index: 20;
+      display: flex; flex-direction: column; align-items: center;
+      background: none; border: none; padding: 0; cursor: pointer;
     }
-    .lamp-head {
-      width: 54px; height: 36px; border-radius: 50% 50% 0 0;
-      background: linear-gradient(160deg, #ffe066 30%, #ffb830 100%);
-      border: 3px solid #c8960a; transition: background .3s;
-    }
-    .lamp-head.off {
-      background: linear-gradient(160deg, #b0aead 30%, #888 100%);
-      border-color: #666;
-    }
-    .lamp-body  { width: 9px;  height: 26px; background: #b0aead; border-radius: 3px; border: 2px solid #888; }
-    .lamp-base  { width: 34px; height: 11px; background: #c8c8c8; border-radius: 5px; border: 2px solid #aaa; }
-    .lamp-glow  {
-      position: absolute; top: -14px; left: -18px; width: 90px; height: 68px;
-      background: radial-gradient(ellipse, rgba(255,224,80,.38) 30%, transparent 80%);
+    .lamp-cord { width: 4px; height: 14px; background: #3b2a12; }   /* hangs from the ceiling */
+    #lampCanvas { display: block; image-rendering: pixelated; position: relative; z-index: 1; transition: filter .3s; }
+    .lamp-btn.off #lampCanvas { filter: grayscale(.85) brightness(.6); }   /* glass goes dark */
+
+    /* Warm glow behind the shade (hidden when off) */
+    .lamp-glow {
+      position: absolute; left: -50px; top: 10px; width: 232px; height: 180px;
+      background: radial-gradient(ellipse at 50% 55%, rgba(255,214,120,.55) 15%, rgba(255,190,80,.18) 50%, transparent 72%);
       pointer-events: none; transition: opacity .4s;
     }
-    .lamp-glow.off  { opacity: 0; }
-    .lamp-label { font-size: 11px; color: #888; letter-spacing: 2px; margin-top: 2px; }
+    .lamp-btn.off .lamp-glow { opacity: 0; }
 
+    /* Pull string: hangs from the middle of the shade */
+    .lamp-pull {
+      position: relative; z-index: 2; margin-top: -2px;
+      display: flex; flex-direction: column; align-items: center;
+      transition: transform .12s ease-out;
+    }
+    .lamp-pull.pulled { transform: translateY(7px); }     /* tug! */
+    .lamp-string { width: 3px; height: 26px; background: #3b2a12; }
+    .lamp-bead   { width: 12px; height: 12px; background: #c9973d; border: 3px solid #3b2a12; border-radius: 50%; }
+    .lamp-tag {
+      margin-top: 4px; white-space: nowrap;
+      font-family: 'Press Start 2P', monospace; font-size: 11px; font-weight: bold; line-height: 1;
+      color: #3b2a12; background: #fff3c4;
+      border: 3px solid #3b2a12; border-radius: 5px;
+      padding: 8px 10px 7px; box-shadow: 0 3px 0 #3b2a12;
+    }
+    .lamp-btn:hover .lamp-tag { background: #ffe88a; }
 
     /* ════════════════════════════════════════════════
        TANK WRAPPER — the main aquarium viewport
@@ -79,6 +90,23 @@
     .tank-wrap.dark-mode {
       background: linear-gradient(180deg, #053a35 0%, #032e2b 45%, #021a18 100%);
     }
+    /* lights off: title switches to a soft moonlit blue so it stays readable */
+    .tank-wrap.dark-mode .tank-title-bar span,
+    .tank-wrap.dark-mode .title-sub { color: #9fcfff; text-shadow: 0 2px 0 rgba(0,0,0,.5); }
+
+    /* Distant backdrop (mountains + light rays) — sits behind everything */
+    #bgCanvas { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; image-rendering: pixelated; }
+
+    /* Background sea creatures — just pixels drifting by, not clickable */
+    .ambient   { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; transition: opacity .6s; }
+    .tank-wrap.dark-mode .ambient { opacity: .3; }
+    .critter   { position: absolute; top: 0; left: 0; will-change: transform; }
+    .critter canvas { display: block; image-rendering: pixelated; }
+    .critter .bob   { animation: critterBob 2.6s ease-in-out infinite; }
+    .critter .pulse { animation: jellyPulse 1.8s ease-in-out infinite; transform-origin: 50% 0; }
+    @keyframes critterBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes jellyPulse { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.86); } }
+    @media (prefers-reduced-motion: reduce) { .ambient { display: none; } }
 
     /* Title banner at the top of the tank */
     .tank-title-bar {
@@ -90,8 +118,38 @@
     .tank-title-bar span {
       font-family: 'Press Start 2P', monospace;
       font-size: clamp(14px, 2.4vw, 26px);
-      color: #fcf4af; letter-spacing: 3px;
-      text-shadow: 0 2px 8px rgba(0,80,60,.6);
+      color: #1d4f91; letter-spacing: 3px;                     /* deep ocean blue */
+      text-shadow: 0 2px 0 rgba(255,255,255,.55);
+    }
+
+    /* "(Personal Website)" sits beside the title in smaller text */
+    .title-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(8px, 1vw, 12px); color: #1d4f91; font-weight: bold;
+      letter-spacing: 1px; margin-left: 8px; white-space: nowrap;
+      text-shadow: 1px 1px 0 rgba(255,255,255,.6);
+    }
+    @media (max-width: 1000px) { .title-sub { display: block; margin: 6px 0 0; } }   /* own line on phones/tablets */
+    @media (max-width: 600px)  { .title-sub { font-size: 7px; } }
+
+    /* Instruction line under the title */
+    .title-hint {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(7px, .85vw, 10px); color: #1d4f91;
+      letter-spacing: 1px; margin-top: 8px;
+      text-shadow: 1px 1px 0 rgba(255,255,255,.6);
+    }
+    .tank-wrap.dark-mode .title-hint { color: #9fcfff; text-shadow: 0 1px 0 rgba(0,0,0,.5); }
+    @media (max-width: 600px) { .title-hint { font-size: 6px; line-height: 1.6; } }
+
+    /* Phones: title moves left so the lamp has room on the right */
+    @media (max-width: 600px) {
+      .tank-title-bar      { text-align: left; padding: 12px 120px 10px 14px; }
+      .tank-title-bar span { font-size: 11px; letter-spacing: 1px; line-height: 1.6; }
+    }
+    @media (min-width: 601px) and (max-width: 1000px) {
+      .tank-title-bar      { padding-right: 140px; padding-left: 20px; text-align: left; }
+      .tank-title-bar span { font-size: 16px; }
     }
 
     /* Shine stripe at the very top of the tank glass */
@@ -170,36 +228,6 @@
     .fish:hover .fish-label { opacity: 1; }
 
 
-    /* ════════════════════════════════════════════════
-       FISH NAV POPUP — small menu that appears near clicked fish
-       ════════════════════════════════════════════════ */
-    .nav-popup {
-      display: none; position: fixed; z-index: 9000;
-      background: rgba(7,90,85,.97);
-      border: 2.5px solid var(--aqua); border-radius: 12px;
-      padding: 12px 16px; min-width: clamp(150px, 18vw, 210px);
-      box-shadow: 0 6px 28px rgba(10,186,181,.55);
-      font-family: 'Press Start 2P', monospace; pointer-events: auto;
-    }
-    .nav-popup.show { display: block; }
-    .nav-popup-title {
-      font-size: clamp(7px, 1vw, 10px); color: var(--aqua);
-      margin-bottom: 10px; letter-spacing: 1px; opacity: .7;
-    }
-    /* Each clickable link inside the popup */
-    .nav-link {
-      display: block; padding: 9px 0;
-      font-size: clamp(7px, 1vw, 10px); color: #fcf4af;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(135,255,221,.18);
-      cursor: pointer; transition: color .15s;
-      /* Reset button styles so it looks like a link */
-      background: none; border-left: none; border-right: none; border-top: none;
-      width: 100%; text-align: left; font-family: 'Press Start 2P', monospace;
-    }
-    .nav-link:last-child { border-bottom: none; }
-    .nav-link:hover { color: #87ffdd; }
-
 
     /* ════════════════════════════════════════════════
        CONTENT PANELS — full-tank overlays
@@ -231,14 +259,34 @@
       flex-shrink: 0;
     }
     .cp-title { font-size: clamp(10px, 1.5vw, 16px); letter-spacing: 2px; }
-    .cp-close {
-      background: rgba(0,0,0,.18); border: 2px solid rgba(0,0,0,.25);
-      cursor: pointer; font-family: 'Press Start 2P', monospace;
-      font-size: clamp(9px, 1.3vw, 14px); padding: 5px 10px;
-      border-radius: 7px; transition: background .15s, transform .1s; line-height: 1;
+    /* ── X (close) buttons — one shared retro-red style ──────────────
+       Used by every panel and pop-up so they all look the same and are
+       big enough to hit easily: chunky red square, white X, a darker
+       "ledge" underneath that squishes down when you click it.        */
+    .cp-close, .cip-close, .ov-close, .pearl-close {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 38px; height: 38px; padding: 0 10px;
+      font-family: 'Press Start 2P', monospace; font-size: 14px; line-height: 1;
+      color: #fff; text-shadow: 2px 2px 0 #7a1020;
+      background: #e43b44;
+      border: 3px solid #7a1020; border-radius: 6px;
+      box-shadow: inset 2px 2px 0 rgba(255,255,255,.35),   /* shiny top-left edge */
+                  0 4px 0 #5a0a14;                          /* the "ledge" */
+      cursor: pointer;
+      transition: transform .08s, box-shadow .08s, background .15s;
     }
-    .cp-close:hover  { background: rgba(0,0,0,.32); transform: scale(1.1); }
-    .cp-close:active { transform: scale(.95); }
+    .cp-close:hover, .cip-close:hover, .ov-close:hover, .pearl-close:hover {
+      background: #ff5560; color: #fff;
+    }
+    .cp-close:active, .cip-close:active, .ov-close:active, .pearl-close:active {
+      transform: translateY(3px);                           /* press down... */
+      box-shadow: inset 2px 2px 0 rgba(255,255,255,.35), 0 1px 0 #5a0a14;
+    }
+    /* Pop-ups are smaller, so their X is a touch smaller (still easy to hit) */
+    .cip-close, .ov-close, .pearl-close {
+      position: absolute; top: 10px; right: 10px;
+      min-width: 32px; height: 32px; font-size: 12px; padding: 0 8px;
+    }
 
     /* Scrollable body of each panel */
     .cp-body { flex: 1; overflow-y: auto; padding: clamp(20px,3vw,40px) clamp(22px,4vw,52px); }
@@ -251,7 +299,6 @@
     #cpAbout              { background: #FFEBAE; }
     #cpAbout .cp-header   { background: #81D8D0; }
     #cpAbout .cp-title    { color: #2a2000; }
-    #cpAbout .cp-close    { color: #2a2000; border-color: rgba(0,0,0,.3); }
     #cpAbout .cp-body     {
       display: flex; flex-direction: row; gap: 0;
       padding: 0; overflow: hidden;
@@ -295,80 +342,10 @@
     }
 
 
-    /* ── Blog panel — dusty rose / brown ── */
-    #cpBlog            { background: #F1AAD0; }
-    #cpBlog .cp-header { background: #876143; }
-    #cpBlog .cp-title  { color: #fff8f4; }
-    #cpBlog .cp-close  { color: #fff8f4; border-color: rgba(255,255,255,.3); }
-    #cpBlog .cp-body   { color: #3a1a0a; }
-
-    /* Blog list: clickable entry cards */
-    .blog-card {
-      display: flex; align-items: center; gap: 14px;
-      background: rgba(255,255,255,.55);
-      border: 2px solid rgba(135,80,40,.18); border-radius: 12px;
-      padding: 14px 16px; margin-bottom: 14px;
-      cursor: pointer; transition: background .15s, transform .12s;
-    }
-    .blog-card:hover { background: rgba(255,255,255,.8); transform: translateY(-2px); }
-    .blog-card-text  { flex: 1; min-width: 0; }
-    .blog-card-title { font-size: clamp(7px,1vw,10px); color: #3a1a0a; letter-spacing: 1px; margin-bottom: 6px; line-height: 1.6; }
-    .blog-card-date  { font-size: clamp(5px,.75vw,8px); color: #876143; opacity: .8; letter-spacing: .5px; }
-    .blog-card-img   {
-      flex-shrink: 0;
-      width: clamp(48px,7vw,72px); height: clamp(48px,7vw,72px);
-      border-radius: 8px; object-fit: cover;
-      border: 2px solid rgba(135,80,40,.25); image-rendering: pixelated;
-    }
-    .blog-card-img-placeholder {
-      flex-shrink: 0;
-      width: clamp(48px,7vw,72px); height: clamp(48px,7vw,72px);
-      border-radius: 8px; border: 2px dashed rgba(135,80,40,.3);
-      background: rgba(135,80,40,.08);
-      display: flex; align-items: center; justify-content: center;
-      font-size: clamp(5px,.7vw,7px); color: rgba(135,80,40,.4);
-      text-align: center; line-height: 1.6;
-    }
-
-    /* Blog detail view (replaces list when an entry is clicked) */
-    #blogDetail        { display: none; flex-direction: column; height: 100%; }
-    #blogDetail.show   { display: flex; }
-    #blogList.hidden   { display: none; }
-
-    .blog-detail-back {
-      display: inline-block; font-family: 'Press Start 2P', monospace;
-      font-size: clamp(6px,.85vw,9px); color: #876143;
-      background: rgba(135,80,40,.12); border: 2px solid rgba(135,80,40,.25);
-      border-radius: 7px; padding: 7px 12px; cursor: pointer;
-      margin-bottom: 18px; transition: background .15s;
-    }
-    .blog-detail-back:hover { background: rgba(135,80,40,.22); }
-
-    .blog-detail-title { font-size: clamp(8px,1.2vw,13px); color: #3a1a0a; letter-spacing: 1px; margin-bottom: 8px; line-height: 1.7; }
-    .blog-detail-date  { font-size: clamp(5px,.75vw,8px); color: #876143; margin-bottom: 20px; opacity: .8; }
-
-    /* Hero image in the detail view */
-    .blog-detail-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(135,80,40,.2); margin-bottom: 20px; }
-
-    /* Detail body — two-column layout for entries with a side photo */
-    .blog-detail-inner {
-      display: flex; gap: 20px; align-items: flex-start;
-    }
-    .blog-detail-body {
-      flex: 1; font-size: clamp(6px,.9vw,9px); line-height: 2.6; color: #3a1a0a;
-    }
-    .blog-detail-side-img {
-      flex-shrink: 0; width: clamp(100px, 20%, 200px);
-      border-radius: 10px; object-fit: cover;
-      border: 2px solid rgba(135,80,40,.25);
-    }
-
-
     /* ── Design Projects panel — tangerine / sky blue ── */
     #cpDesign            { background: #F07D48; }
     #cpDesign .cp-header { background: #37B1E9; }
     #cpDesign .cp-title  { color: #fff8f4; }
-    #cpDesign .cp-close  { color: #fff8f4; border-color: rgba(255,255,255,.3); }
     #cpDesign .cp-body   { color: #fff8f4; }
 
     .design-card {
@@ -425,73 +402,190 @@
     #cpDesign .project-link-btn:hover { background: #ffe8da; }
 
 
-    /* ── Code Projects panel — blush / lavender ── */
-    #cpCode            { background: #F5B8C6; }
-    #cpCode .cp-header { background: #A99CFD; }
-    #cpCode .cp-title  { color: #1a0a2e; }
-    #cpCode .cp-close  { color: #1a0a2e; border-color: rgba(0,0,0,.25); }
-    #cpCode .cp-body   { color: #2a0a18; }
+    /* ── Experience panel — sky aqua / deep teal (the "LinkedIn 2.0" page) ── */
+    #cpExp            { background: #D4F6FF; }
+    #cpExp .cp-header { background: #0a8f8a; }
+    #cpExp .cp-title  { color: #fcf4af; }
+    #cpExp .cp-body   { color: #06302e; }
 
-    .code-card {
+    /* One card per job / role in the list view */
+    .exp-card {
       display: flex; align-items: center; gap: 14px;
-      background: rgba(169,156,253,.25); border: 2px solid rgba(169,156,253,.4);
+      background: rgba(255,255,255,.6); border: 2px solid rgba(10,143,138,.25);
       border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
       cursor: pointer; transition: background .15s, transform .12s;
     }
-    .code-card:hover { background: rgba(169,156,253,.45); transform: translateY(-2px); }
-    .code-card-text  { flex: 1; min-width: 0; }
-    .code-card-title { font-size: clamp(7px,1vw,10px);  color: #1a0a2e; letter-spacing: 1px; margin-bottom: 6px; line-height: 1.6; }
-    .code-card-tag   { font-size: clamp(5px,.75vw,8px); color: #5a3a7a; letter-spacing: .5px; }
-    .code-card-img   {
+    .exp-card:hover { background: rgba(255,255,255,.9); transform: translateY(-2px); }
+    .exp-card-text  { flex: 1; min-width: 0; }
+    .exp-card-title { font-size: clamp(7px,1vw,10px); color: #06302e; letter-spacing: 1px; margin-bottom: 6px; line-height: 1.6; }
+    .exp-card-tag   { font-size: clamp(5px,.75vw,8px); color: #0a8f8a; letter-spacing: .5px; line-height: 1.8; }
+    .exp-card-img   {
       flex-shrink: 0; width: clamp(48px,7vw,72px); height: clamp(48px,7vw,72px);
-      border-radius: 8px; object-fit: cover; border: 2px solid rgba(169,156,253,.4);
+      border-radius: 8px; object-fit: cover; border: 2px solid rgba(10,143,138,.3);
+      background: #fff;
     }
-    .code-card-img-placeholder {
+    .exp-card-img-placeholder {
       flex-shrink: 0; width: clamp(48px,7vw,72px); height: clamp(48px,7vw,72px);
-      border-radius: 8px; border: 2px dashed rgba(169,156,253,.5);
-      background: rgba(169,156,253,.12);
+      border-radius: 8px; border: 2px dashed rgba(10,143,138,.35);
+      background: rgba(10,143,138,.08);
       display: flex; align-items: center; justify-content: center;
-      font-size: clamp(5px,.7vw,7px); color: #7a5aaa;
+      font-size: clamp(5px,.7vw,7px); color: rgba(10,143,138,.6);
       text-align: center; line-height: 1.6;
     }
 
-    #codeDetail      { display: none; flex-direction: column; height: 100%; }
-    #codeDetail.show { display: flex; }
-    #codeList.hidden { display: none; }
+    #expDetail       { display: none; flex-direction: column; }
+    #expDetail.show  { display: flex; }
+    #expList.hidden  { display: none; }
 
-    .code-detail-back {
-      display: inline-block; font-family: 'Press Start 2P', monospace;
-      font-size: clamp(6px,.85vw,9px); color: #1a0a2e;
-      background: rgba(169,156,253,.2); border: 2px solid rgba(169,156,253,.45);
+    .exp-detail-back {
+      display: inline-block; align-self: flex-start;
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(6px,.85vw,9px); color: #06302e;
+      background: rgba(10,143,138,.12); border: 2px solid rgba(10,143,138,.3);
       border-radius: 7px; padding: 7px 12px; cursor: pointer;
       margin-bottom: 18px; transition: background .15s;
     }
-    .code-detail-back:hover { background: rgba(169,156,253,.38); }
-    .code-detail-title      { font-size: clamp(8px,1.2vw,13px); color: #1a0a2e; letter-spacing: 1px; margin-bottom: 8px; line-height: 1.7; }
-    .code-detail-tag        { font-size: clamp(5px,.75vw,8px);  color: #5a3a7a; margin-bottom: 20px; }
-    .code-detail-img        { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(169,156,253,.35); margin-bottom: 20px; }
-    .code-detail-body       { font-size: clamp(6px,.9vw,9px);  line-height: 2.6; color: #2a0a18; }
+    .exp-detail-back:hover { background: rgba(10,143,138,.22); }
+    .exp-detail-title      { font-size: clamp(8px,1.2vw,13px); color: #06302e; letter-spacing: 1px; margin-bottom: 8px; line-height: 1.7; }
+    .exp-detail-tag        { font-size: clamp(5px,.75vw,8px);  color: #0a8f8a; margin-bottom: 20px; line-height: 1.8; }
+    .exp-detail-img        { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(10,143,138,.25); margin-bottom: 20px; }
+    .exp-detail-body       { font-size: clamp(6px,.9vw,9px);  line-height: 2.6; color: #06302e; }
 
-    #cpCode .project-link-btn { color: #fff8f4; background: #A99CFD; border-color: #A99CFD; }
-    #cpCode .project-link-btn:hover { background: #bbb0ff; }
+    /* "see my experience →" button on the About Me panel */
+    #cpAbout .project-link-btn       { color: #2a2000; background: #81D8D0; border-color: #5fbdb4; margin-top: 4px; }
+    #cpAbout .project-link-btn:hover { background: #9fe6df; }
 
+    #cpExp .project-link-btn       { color: #fcf4af; background: #0a8f8a; border-color: #0a8f8a; }
+    #cpExp .project-link-btn:hover { background: #0abab5; }
 
-    /* ── Socials panel — mint / brown ── */
-    #cpSocials            { background: #ADF7EB; }
-    #cpSocials .cp-header { background: #876143; }
-    #cpSocials .cp-title  { color: #fff8f4; }
-    #cpSocials .cp-close  { color: #fff8f4; border-color: rgba(255,255,255,.3); }
-    #cpSocials .cp-body   { color: #1a0a00; }
-
-    .social-card {
-      display: block; padding: 14px 18px; margin-bottom: 12px;
-      border-radius: 10px; text-decoration: none;
-      background: rgba(0,0,0,.1); border: 2px solid rgba(0,0,0,.15);
-      color: inherit; transition: background .15s, transform .12s;
-      font-size: clamp(8px,1.1vw,12px); letter-spacing: 1px; line-height: 2;
+    /* Group heading above each list section ("research", "industry", ...)
+       — a big, bold, filled badge so it's easy to spot while scrolling */
+    .list-section-label {
+      display: inline-block;
+      font-size: clamp(10px, 1.3vw, 14px); font-weight: bold;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: #fcf4af; background: #0a8f8a;
+      border: 3px solid #06302e; border-radius: 8px;
+      box-shadow: 0 4px 0 #06302e;
+      padding: 9px 14px 8px; margin: 22px 0 16px;
     }
-    .social-card:hover { background: rgba(0,0,0,.18); transform: translateY(-2px); }
-    .social-card-url { display: block; font-size: clamp(6px,.85vw,9px); opacity: .6; margin-top: 4px; }
+    .list-section-label:first-child { margin-top: 0; }
+
+
+    /* ── PHONES: stack About Me (photo on top, text below) and tighten panels ── */
+    @media (max-width: 600px) {
+      .content-panel, .overlay-panel { inset: 6px; }
+      .cp-body { padding: 16px 14px; }
+      #cpAbout .cp-body   { flex-direction: column; overflow-y: auto; }
+      .about-photo-col    { order: 1; flex: none; height: 260px; padding: 14px 14px 0; }
+      .about-text-col     { order: 2; overflow: visible; padding: 18px 16px 24px; }
+      .about-text-col p   { font-size: 8px; }
+      .exp-card, .design-card, .code-card { padding: 12px; gap: 10px; }
+      .lamp-btn           { right: 12px; }
+      .lamp-tag           { font-size: 9px; padding: 6px 7px 5px; }
+    }
+
+    /* ── READABILITY — the pixel font gets hard to read when tiny, so the
+          card + detail text in Experience / Design / Code is sized up here ── */
+    .exp-card-title,   .design-card-title   { font-size: clamp(9px, 1.15vw, 13px); }
+    .exp-card-tag,     .design-card-tag     { font-size: clamp(7px, .85vw, 10px); line-height: 1.8; }
+    .exp-detail-title, .design-detail-title { font-size: clamp(11px, 1.5vw, 17px); }
+    .exp-detail-tag,   .design-detail-tag   { font-size: clamp(7px, .9vw, 10px); }
+    .exp-detail-body,  .design-detail-body  { font-size: clamp(8px, 1vw, 11px); line-height: 2.4; }
+    .skill-chip            { font-size: clamp(7px, .8vw, 9px); }
+    .detail-event-title    { font-size: clamp(9px, 1.15vw, 13px); font-weight: bold; }
+    .detail-gallery figcaption { font-size: clamp(6px, .75vw, 8px); }
+
+    /* ── Shared detail-view extras (used by Experience, Design + Code) ── */
+
+    /* Bullet list of accomplishments */
+    .detail-list {
+      list-style: none; padding: 0; margin: 4px 0 16px;
+    }
+    .detail-list li {
+      position: relative; padding-left: 1.8em; margin-bottom: 10px;
+    }
+    .detail-list li::before {           /* pixel-y star instead of a dot */
+      content: '✦'; position: absolute; left: 0; opacity: .7;
+    }
+
+    /* Skill "chips" — little rounded pills */
+    .skill-row  { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+    .skill-chip {
+      font-size: clamp(5px,.7vw,7px); letter-spacing: .5px; line-height: 1;
+      padding: 6px 9px; border-radius: 999px;
+      background: rgba(255,255,255,.45); border: 1.5px solid rgba(0,0,0,.15);
+    }
+
+    /* Row of photos under the text (e.g. PC build pictures) */
+    .detail-gallery {
+      display: grid; gap: 12px; margin: 6px 0 16px;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    }
+    .detail-gallery figure { margin: 0; }
+    .detail-gallery img {
+      width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: center 30%; display: block;
+      border-radius: 10px; border: 2px solid rgba(0,0,0,.15);
+    }
+    /* wide: true → photo spans the whole row, shown uncropped */
+    .detail-gallery figure.wide     { grid-column: 1 / -1; }
+    .detail-gallery figure.wide video { aspect-ratio: 16 / 9; max-width: 900px; }
+    .detail-gallery figure.wide img { aspect-ratio: auto; max-width: 720px; }
+
+    .detail-credit { margin-top: 18px; font-size: clamp(6px, .8vw, 9px); opacity: .8; font-style: italic; }
+    .detail-gallery video {
+      width: 100%; aspect-ratio: 4 / 3; object-fit: contain; display: block; background: #000;   /* contain = tall phone videos aren't cropped */
+      border-radius: 10px; border: 2px solid rgba(0,0,0,.15);
+    }
+    .detail-gallery figcaption {
+      font-size: clamp(5px,.65vw,7px); opacity: .7;
+      margin-top: 6px; line-height: 1.6;
+    }
+
+    /* Keep "← back" buttons button-sized (not stretched across the panel) */
+    .design-detail-back { align-self: flex-start; }
+
+    /* Link preview card — a mini "web page" you click to open */
+    .link-preview {
+      display: flex; gap: 14px; align-items: stretch;
+      max-width: 620px; margin: 8px 0 18px; padding: 12px;
+      background: #fff; color: #06302e; text-decoration: none;
+      border: 3px solid #06302e; border-radius: 12px; box-shadow: 0 4px 0 #06302e;
+      transition: transform .1s, box-shadow .1s;
+    }
+    .link-preview:hover  { transform: translateY(-2px); box-shadow: 0 6px 0 #06302e; }
+    .link-preview:active { transform: translateY(2px);  box-shadow: 0 1px 0 #06302e; }
+    .lp-thumb {
+      flex: 0 0 clamp(64px, 14vw, 110px); aspect-ratio: 1 / 1;
+      display: flex; align-items: center; justify-content: center;
+      background: #9d2235; color: #fff;               /* SJU crimson */
+      border-radius: 8px; font-size: clamp(22px, 4vw, 40px); overflow: hidden;
+    }
+    .lp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .lp-text  { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .lp-site  { font-size: clamp(6px, .75vw, 8px); opacity: .7; }
+    .lp-title { font-size: clamp(8px, 1vw, 11px); font-weight: bold; line-height: 1.6; }
+    .lp-desc  { font-size: clamp(6px, .8vw, 9px); line-height: 1.9; opacity: .85; }
+    .lp-cta   { font-size: clamp(6px, .75vw, 8px); color: #0a8f8a; margin-top: auto; }
+
+    /* One event inside an experience (title + blurb + its own photos) */
+    .detail-event       { margin: 8px 0 22px; padding-top: 14px; border-top: 2px dashed rgba(0,0,0,.15); }
+    .detail-event-title { font-size: clamp(7px,1vw,10px); letter-spacing: 1px; margin-bottom: 8px; }
+    .detail-event-body  { margin-bottom: 10px; }
+
+    /* Skills subtitle under each project title */
+    .skill-subtitle {
+      display: inline-block; margin: 2px 0 8px;
+      font-size: clamp(6px, .8vw, 9px); font-weight: bold; letter-spacing: .5px; line-height: 1.8;
+      color: #fff8f4; background: rgba(0,0,0,.18);
+      border-radius: 6px; padding: 4px 8px;
+    }
+    #cpDesign .skill-row { display: none; }   /* projects already list skills in the subtitle */
+    .skill-subtitle-big { font-size: clamp(7px, .9vw, 10px); margin: 0 0 10px; align-self: flex-start; }
+
+    /* Space between two link buttons sitting side by side */
+    .project-link-btn { margin-right: 10px; }   /* wraps neatly when there are several */
+
 
 
     /* ════════════════════════════════════════════════
@@ -514,39 +608,25 @@
     #galleryPanel            { background: #3d1e00; }
     #galleryPanel .cp-header { background: #5a300a; border-bottom-color: rgba(200,132,58,.5); }
     #galleryPanel .cp-title  { color: #FFD700; }
-    #galleryPanel .cp-close  {
-      color: #FFD700; border-color: rgba(200,132,58,.5);
-      background: rgba(200,132,58,.2);
-    }
-    #galleryPanel .cp-close:hover { background: rgba(200,132,58,.38); }
-    #galleryPanel .cp-body { padding: clamp(16px,2.5vw,32px); overflow: hidden; display: flex; flex-direction: column; }
-
-    /* Carousel layout inside gallery */
-    .carousel-wrapper { position: relative; flex: 1; display: flex; align-items: center; gap: 12px; }
-
-    .carousel-arrow {
-      flex-shrink: 0; width: 36px; height: 36px;
-      background: rgba(200,132,58,.25); border: 2.5px solid #c8843a;
-      border-radius: 8px; color: #FFD700;
-      font-family: 'Press Start 2P', monospace; font-size: 14px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: background .15s, transform .1s; z-index: 2;
-    }
-    .carousel-arrow:hover    { background: rgba(200,132,58,.45); }
-    .carousel-arrow:active   { transform: scale(.93); }
-    .carousel-arrow:disabled { opacity: .3; cursor: default; }
-
-    .carousel-viewport { flex: 1; overflow: hidden; }
-    .carousel-track    {
-      display: flex; gap: clamp(14px,2vw,24px);
-      transition: transform .35s cubic-bezier(.4,0,.2,1);
-      will-change: transform;
+    #galleryPanel .cp-body { padding: 14px; overflow-y: auto; }   /* scroll down for more boxes */
+    /* The chest window shrinks to fit its boxes (no big empty margins) */
+    #galleryPanel {
+      inset: 0; margin: auto;
+      width: min(560px, calc(100% - 20px));
+      height: fit-content; max-height: calc(100% - 20px);
     }
 
-    /* Each card in the carousel */
+    /* Grid of boxes inside the chest — 3 across, scroll down for more */
+    .chest-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      width: 100%; max-width: min(520px, 58vh); margin: 0 auto;   /* small enough that a full 3×3 fits */
+    }
+    @media (max-width: 600px) { .chest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    /* Each box in the chest grid (square) */
     .chest-icon-card {
-      flex-shrink: 0;
-      width: clamp(160px,20vw,220px); height: clamp(190px,24vw,260px);
+      aspect-ratio: 1 / 1;
       background: rgba(255,255,255,.07);
       border: 2.5px solid rgba(200,132,58,.45); border-radius: 14px;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
@@ -570,16 +650,11 @@
       position: relative; z-index: 1; margin-top: auto; padding-top: 6px;
     }
 
-    /* Dot indicators below the carousel */
-    .carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
-    .carousel-dot  {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: rgba(200,132,58,.35); border: 1.5px solid #c8843a;
-      cursor: pointer; transition: background .2s;
-    }
-    .carousel-dot.active { background: #FFD700; border-color: #FFD700; }
+    /* Empty boxes waiting for a future feature */
+    .chest-icon-card.locked             { border-style: dashed; opacity: .6; }
+    .chest-icon-card.locked:hover       { opacity: .85; }
 
-    /* Pop-up inside the gallery (Spotify embed, "coming soon", etc.) */
+    /* Pop-up inside the gallery (Gracie live links, "coming soon", etc.) */
     .chest-item-popup {
       display: none; position: absolute; z-index: 10500;
       width: clamp(300px,72%,520px);
@@ -590,15 +665,18 @@
       box-shadow: 0 8px 32px rgba(0,0,0,.58);
     }
     .chest-item-popup.show { display: block; }
-    .cip-close {
-      position: absolute; top: 10px; right: 14px;
-      font-size: clamp(9px,1.3vw,13px); color: #c8843a;
-      cursor: pointer; background: none; border: none;
-      font-family: 'Press Start 2P', monospace;
-    }
-    .cip-close:hover { color: #FFD700; }
     .cip-title       { font-size: clamp(8px,1.2vw,12px); color: #FFD700; letter-spacing: 1px; margin-bottom: 12px; text-align: center; }
-    .spotify-popup-inner  { display: flex; flex-direction: column; gap: 0; }
+    /* Gracie Abrams live-performance list (inside the chest pop-up) */
+    .gracie-list { display: flex; flex-direction: column; gap: 8px; max-height: 55vh; overflow-y: auto; }
+    .gracie-link {
+      display: block; padding: 10px 12px; border-radius: 8px;
+      font-size: clamp(6px,.85vw,9px); line-height: 1.6; letter-spacing: .5px;
+      color: #fcf4af; text-decoration: none;
+      background: rgba(200,132,58,.18); border: 2px solid rgba(200,132,58,.55);
+      transition: background .15s, transform .1s;
+    }
+    .gracie-link:hover  { background: rgba(200,132,58,.38); transform: translateX(3px); }
+    .gracie-all         { color: #FFD700; border-color: #FFD700; text-align: center; margin-top: 4px; }
     .coming-soon-inner    { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
     .coming-soon-emoji    { font-size: 36px; }
     .coming-soon-text     { font-size: clamp(6px,.9vw,9px); color: #fcf4af; letter-spacing: 1px; line-height: 2.2; opacity: .8; }
@@ -654,13 +732,6 @@
     }
     .ov-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #3d1e00; }
 
-    .ov-close {
-      position: absolute; top: 9px; right: 12px;
-      font-size: clamp(9px,1.3vw,13px); color: #c8843a;
-      cursor: pointer; background: none; border: none;
-      font-family: 'Press Start 2P', monospace;
-    }
-    .ov-close:hover { color: #FFD700; }
 
     /* Formspree response messages */
     .fb-success-msg { font-family: 'Press Start 2P', monospace; font-size: clamp(7px,1vw,9px); color: #87ffdd; text-align: center; letter-spacing: 1px; line-height: 2; padding: 10px 0 4px; }
@@ -679,36 +750,36 @@
 
 
     /* ════════════════════════════════════════════════
-       PEARL OF WISDOM OVERLAY
+       THE CONTACT CLAM (opens when you click the clam)
        ════════════════════════════════════════════════ */
     .pearl-overlay {
       display: none; position: absolute; z-index: 9999;
       width: clamp(260px, 56%, 420px);
-      background: linear-gradient(145deg, #1e0a38, #3d1a6a, #2a0a50);
-      border: 3px solid #cc88ff; border-radius: 16px;
+      background: #D670D3;                       /* solid orchid purple */
+      border: 3px solid #8f3a8c; border-radius: 16px;
       padding: 24px 22px 20px;
       font-family: 'Press Start 2P', monospace;
-      box-shadow: 0 8px 32px rgba(80,0,120,.6), inset 0 0 24px rgba(200,140,255,.08);
+      box-shadow: 0 6px 0 #8f3a8c, 0 14px 32px rgba(60,0,60,.35);  /* chunky retro ledge */
       text-align: center;
     }
     .pearl-overlay.show { display: block; }
-    .pearl-close {
-      position: absolute; top: 9px; right: 12px;
-      font-size: clamp(9px,1.3vw,13px); color: #cc88ff;
-      cursor: pointer; background: none; border: none;
-      font-family: 'Press Start 2P', monospace;
-    }
-    .pearl-close:hover   { color: #fff; }
-    .pearl-title         { font-size: clamp(10px,1.5vw,14px); color: #e8b0ff; letter-spacing: 2px; margin-bottom: 4px; }
-    .pearl-subtitle      { font-size: clamp(6px,.85vw,8px); color: #aa77dd; margin-bottom: 16px; letter-spacing: 1px; }
-    .pearl-gem           { font-size: 28px; margin-bottom: 10px; animation: pearlpulse 2.5s ease-in-out infinite; }
+    .pearl-title         { font-size: clamp(10px,1.5vw,14px); color: #fff; text-shadow: 2px 2px 0 #8f3a8c; letter-spacing: 2px; margin: 6px 0 8px; }
+    .pearl-subtitle      { font-size: clamp(6px,.85vw,8px); color: #4a0f48; margin-bottom: 16px; letter-spacing: 1px; }
 
-    /* Fortune-cookie style slip inside the pearl overlay */
-    .fortune-slip        { background: linear-gradient(160deg, #fff9f0, #fdf0d8); border: 2px solid #e8c87a; border-radius: 10px; padding: 18px 16px; margin: 12px 0 14px; }
-    .fortune-text        { font-size: clamp(7px,1vw,10px); color: #5a3000; line-height: 2.2; letter-spacing: .5px; font-style: italic; font-family: Georgia, serif; }
-    .fortune-divider     { border: none; border-top: 1.5px dashed #e8c87a; margin: 10px 0 8px; }
-    .fortune-lucky       { font-size: clamp(5px,.7vw,7px); color: #aa7700; letter-spacing: 1px; font-family: 'Press Start 2P', monospace; }
-    .pearl-refresh-hint  { font-size: clamp(5px,.7vw,7px); color: #aa77dd; letter-spacing: .5px; margin-top: 6px; opacity: .8; }
+    /* Contact buttons inside the pearl */
+    .pearl-links { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+    .pearl-link {
+      display: block; width: 100%; padding: 12px 14px; border-radius: 10px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(7px,1vw,10px); letter-spacing: 1px; line-height: 1.8;
+      color: #3a0838; text-decoration: none; text-align: left; cursor: pointer;
+      background: rgba(255,255,255,.35); border: 2px solid rgba(74,15,72,.35);
+      transition: background .15s, transform .1s;
+    }
+    .pearl-link:hover   { background: rgba(255,255,255,.6); transform: translateX(3px); }
+    .pearl-link-sub     { display: block; font-size: clamp(5px,.7vw,7px); color: #6a2066; letter-spacing: .5px; }
+    .pearl-link-bottle  { background: #fff3c4; border-color: #c8960a; }
+    .pearl-link-bottle:hover { background: #ffe88a; }
 
 
     /* ════════════════════════════════════════════════
@@ -761,10 +832,24 @@
       100% { transform: translateY(-70px) scale(.4); opacity: 0; }
     }
 
+    /* Feedback form: little subtitle + send status line */
+    .ov-sub    { font-size: clamp(6px,.8vw,9px); color: #fcf4af; text-align: center; margin: -4px 0 12px; opacity: .9; }
+    .fb-status { min-height: 1.6em; margin-top: 10px; text-align: center; font-size: clamp(6px,.8vw,9px); line-height: 1.6; }
+    .fb-status.ok  { color: #87ffdd; }
+    .fb-status.err { color: #ffb4a0; }
+
+    /* Fish-food pellet (pixel nugget) */
+    .pellet {
+      position: absolute; width: 10px; height: 10px; z-index: 5; pointer-events: none;
+      margin: -5px 0 0 -5px;
+      background: #b5652b;
+      box-shadow: inset -3px -3px 0 #7a3f15, inset 2px 2px 0 #e8a060;   /* pixel shading */
+    }
+
     .ty-msg {
       position: absolute; font-family: 'Press Start 2P', monospace;
-      font-size: clamp(7px,1vw,10px); color: #FF82C2;
-      background: rgba(255,255,255,.93); border: 2px solid #FF82C2;
+      font-size: clamp(8px,1.1vw,12px); font-weight: bold; color: #d6337f;
+      background: #fff; border: 3px solid #d6337f; box-shadow: 0 3px 0 #a3245f;
       border-radius: 8px; padding: 5px 10px; pointer-events: none; z-index: 600;
       white-space: nowrap; animation: fadeup 2.2s ease-out forwards;
     }
@@ -797,6 +882,92 @@
     /* Sand + seagrass are drawn on this background canvas */
     #mainCanvas { position: absolute; bottom: 0; left: 0; z-index: 1; pointer-events: none; }
 
+
+    /* ══════════════════════════════════════════════════════════════
+       PROJECTS — READABILITY PALETTE
+       Orange's color-wheel partner is teal, with warm cream as the
+       neutral. Boxes are SOLID (not see-through) with dark ink text,
+       alternating cream / soft teal, outlined like the section badges.
+       ══════════════════════════════════════════════════════════════ */
+    #cpDesign {
+      --ink:      #2b1d14;   /* dark brown-black text — easy to read */
+      --ink-soft: #6b4a33;   /* secondary text (dates, tags) */
+      --cream:    #fff3e0;
+      --seafoam:  #d3f1ec;
+      --teal:     #0a8f8a;
+      --edge:     #3a2414;
+    }
+
+    /* list boxes */
+    #cpDesign .design-card {
+      background: var(--cream);
+      border: 3px solid var(--edge); border-radius: 12px;
+      box-shadow: 0 4px 0 var(--edge);
+    }
+    #cpDesign .design-card.alt { background: var(--seafoam); }
+    #cpDesign .design-card:hover  { background: #ffe6c2; transform: translateY(-2px); box-shadow: 0 6px 0 var(--edge); }
+    #cpDesign .design-card.alt:hover { background: #bfeae3; }
+    #cpDesign .design-card-title  { color: var(--ink); font-weight: bold; }
+    #cpDesign .design-card-tag    { color: var(--ink-soft); }
+    #cpDesign .design-card-img    { border: 2px solid var(--edge); }
+    #cpDesign .design-card-img-placeholder { border-color: rgba(58,36,20,.4); color: var(--ink-soft); background: rgba(58,36,20,.06); }
+
+    /* detail page = a cream "paper" sheet sitting on the orange */
+    #cpDesign #designDetail {
+      height: auto;                              /* grow with the content */
+      background: var(--cream); color: var(--ink);
+      border: 3px solid var(--edge); border-radius: 14px;
+      box-shadow: 0 5px 0 var(--edge);
+      padding: clamp(16px, 2.5vw, 30px);
+    }
+    #cpDesign .design-detail-title { color: var(--ink); font-weight: bold; }
+    #cpDesign .design-detail-tag   { color: var(--ink-soft); }
+    #cpDesign .design-detail-body  { color: var(--ink); }
+    #cpDesign .design-detail-back  {
+      color: var(--ink); background: #fff; border: 2px solid var(--edge);
+      box-shadow: 0 3px 0 var(--edge);
+    }
+    #cpDesign .design-detail-back:hover { background: #ffe6c2; }
+    #cpDesign .detail-gallery figcaption { color: var(--ink-soft); opacity: 1; }
+    #cpDesign .detail-credit { color: var(--ink-soft); }
+    #cpDesign .skill-subtitle {
+      color: #fff; background: var(--teal);
+      border: 2px solid #06302e; box-shadow: 0 3px 0 #06302e;
+    }
+    #cpDesign .project-link-btn { color: #fff; background: var(--teal); border-color: #06302e; }
+
+    /* section headings inside a detail page ("key design decisions", "outcome") */
+    .detail-h {
+      display: inline-block; margin: 14px 0 12px;
+      font-size: clamp(8px, 1vw, 11px); text-transform: uppercase; letter-spacing: 2px;
+      color: #fff; background: #0a8f8a; border: 2px solid #06302e;
+      border-radius: 6px; padding: 6px 10px; box-shadow: 0 3px 0 #06302e;
+    }
+    .detail-list b { color: #0a6e6a; }
+
+    /* milestone boxes inside a course page */
+    .part-grid {
+      display: grid; gap: 14px; margin: 6px 0 20px;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+    }
+    .part-card {
+      display: flex; flex-direction: column; text-align: left;
+      font-family: 'Press Start 2P', monospace; color: var(--ink, #2b1d14);
+      background: var(--seafoam, #d3f1ec);
+      border: 3px solid var(--edge, #3a2414); border-radius: 12px;
+      box-shadow: 0 4px 0 var(--edge, #3a2414);
+      padding: 0; overflow: hidden; cursor: pointer;
+      transition: transform .1s, box-shadow .1s, background .15s;
+    }
+    .part-card:nth-child(even) { background: #ffe0c7; }        /* soft apricot — sits between orange and cream */
+    .part-card:hover  { transform: translateY(-3px); box-shadow: 0 7px 0 var(--edge, #3a2414); }
+    .part-card:active { transform: translateY(2px);  box-shadow: 0 1px 0 var(--edge, #3a2414); }
+    .part-card-img    { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border-bottom: 3px solid var(--edge, #3a2414); }
+    .part-card-text   { display: flex; flex-direction: column; gap: 8px; padding: 14px; }
+    .part-card-kicker { font-size: clamp(6px, .75vw, 8px); text-transform: uppercase; letter-spacing: 2px; color: var(--teal, #0a8f8a); font-weight: bold; }
+    .part-card-title  { font-size: clamp(9px, 1.1vw, 12px); font-weight: bold; line-height: 1.6; }
+    .part-card-sum    { font-size: clamp(7px, .85vw, 9px); line-height: 1.9; color: var(--ink-soft, #6b4a33); }
+    .part-card-cta    { font-size: clamp(7px, .8vw, 9px); color: var(--teal, #0a8f8a); margin-top: 4px; }
   </style>
 </head>
 
@@ -804,15 +975,17 @@
 <div class="scene">
 
   <!-- ══════════════════════════════════════════════
-       LAMP — click to toggle dark mode (top-right corner)
+       LAMP — pixel Tiffany lamp, click to toggle dark mode (top-right)
        ══════════════════════════════════════════════ -->
-  <button class="lamp-btn" id="lampBtn" aria-label="Toggle aquarium light">
-    <div class="lamp-head" id="lampHead">
-      <div class="lamp-glow" id="lampGlow"></div>
-    </div>
-    <div class="lamp-body"></div>
-    <div class="lamp-base"></div>
-    <span class="lamp-label" id="lampLabel">ON</span>
+  <button class="lamp-btn" id="lampBtn" aria-label="Turn the aquarium light off">
+    <span class="lamp-glow"></span>
+    <span class="lamp-cord"></span>                  <!-- cord up to the ceiling -->
+    <canvas id="lampCanvas"></canvas>                <!-- pixel lampshade drawn by JS -->
+    <span class="lamp-pull" id="lampPull">
+      <span class="lamp-string"></span>
+      <span class="lamp-bead"></span>
+      <span class="lamp-tag" id="lampLabel">Click me (on)</span>
+    </span>
   </button>
 
 
@@ -827,40 +1000,48 @@
     <!-- Animated bubble particles -->
     <div id="bubbles" class="bubbles"></div>
 
+    <!-- Distant scene: mountains + light rays (drawn by JS, sits furthest back) -->
+    <canvas id="bgCanvas"></canvas>
+
     <!-- Background canvas: sand + seagrass (drawn by JS) -->
     <canvas id="mainCanvas"></canvas>
+
+    <!-- Sea creatures that drift through now and then (not clickable) -->
+    <div class="ambient" id="ambient"></div>
 
     <!-- Tank title banner -->
     <div class="tank-title-bar" id="titleBar">
       <span>Bonnie Peng's Aquarium</span>
+      <small class="title-sub">(Personal Website)</small>
+      <div class="title-hint">Click on a fish to interact with the portfolio.</div>
     </div>
 
 
     <!-- ─────────────────────────────────────────────
          FISH — each fish is a clickable nav trigger.
          Click a fish → nav popup appears near it.
-         Click a nav link → content panel slides in.
+         Click a fish → its page slides in (no in-between menu).
          ───────────────────────────────────────────── -->
     <div class="fish-area" id="fishArea">
 
-      <!-- Orange Betta → Projects menu -->
+      <!-- Gold fish → Projects page -->
       <div class="fish" id="fishBetta">
         <span class="zzz">z z z</span>
         <span class="fish-label">Projects</span>
         <canvas id="bettaCanvas"></canvas>
       </div>
 
-      <!-- Pink Oranda → About menu -->
+      <!-- Pink fish → Experience page -->
       <div class="fish" id="fishOranda">
         <span class="zzz">z z z</span>
-        <span class="fish-label">About</span>
+        <span class="fish-label">Experience</span>
         <canvas id="orandaCanvas"></canvas>
       </div>
 
-      <!-- Teal Pleco → Socials menu -->
+      <!-- Teal fish → About Me page -->
       <div class="fish" id="fishPleco">
         <span class="zzz">z z z</span>
-        <span class="fish-label">Socials</span>
+        <span class="fish-label">About Me</span>
         <canvas id="plecoCanvas"></canvas>
       </div>
 
@@ -879,35 +1060,8 @@
 
     <!-- Message-in-a-bottle (between clam and chest) — opens feedback form -->
     <button id="bottleBtn" aria-label="Leave a message">
-      <span class="bottle-label">✉ message in a bottle</span>
+      <span class="bottle-label">message in a bottle</span>
     </button>
-
-
-    <!-- ═══════════════════════════════════════════════════════
-         NAV POPUPS — small menus that appear near the fish
-         Clicking links inside these opens the full-screen panels below.
-         NOTE: These are positioned by JS (posPopup) so they stay near the fish.
-         ═══════════════════════════════════════════════════════ -->
-
-    <!-- Betta → Projects submenu -->
-    <div class="nav-popup" id="navBetta">
-      <div class="nav-popup-title">projects</div>
-      <button class="nav-link" onclick="openPanel('cpDesign')">Design Projects</button>
-      <button class="nav-link" onclick="openPanel('cpCode')">Code Projects</button>
-    </div>
-
-    <!-- Oranda → About submenu -->
-    <div class="nav-popup" id="navOranda">
-      <div class="nav-popup-title">about</div>
-      <button class="nav-link" onclick="openPanel('cpAbout')">About Me</button>
-      <button class="nav-link" onclick="openPanel('cpBlog')">Blog</button>
-    </div>
-
-    <!-- Pleco → Socials submenu -->
-    <div class="nav-popup" id="navPleco">
-      <div class="nav-popup-title">socials</div>
-      <button class="nav-link" onclick="openPanel('cpSocials')">Socials</button>
-    </div>
 
 
     <!-- ═══════════════════════════════════════════════════════
@@ -924,23 +1078,15 @@
       <div class="cp-body">
         <!-- Two columns: text left, photo right -->
         <div class="about-text-col">
-          <h2>hi, i'm bonnie! ✦</h2>
+          <h2>Hi, I'm Bonnie!</h2>
           <p>Welcome to my personal website!</p>
           <p>
             I'm an undergraduate student at Princeton University majoring in
-            Electrical and Computer Engineering. I like to build and code with
-            Arduinos in my free time, play video games, and take care of my fish.
-            I'm hoping to get better at creating things outside of courses and
-            teaching others how to build as well. I link some of my projects in
-            my blog — hope you like them!
+            Electrical and Computer Engineering. I like to build and code in my
+            free time, play video games, and take care of my many aquariums.
           </p>
-          <p><strong>Skills in Progress:</strong></p>
-          <ul>
-            <li>Java · Verilog · HTML/CSS · JavaScript · Python</li>
-          </ul>
-          <p>★ This website concept was inspired by my love for aquariums</p>
-          <p>★ I love my cat</p>
-          <p>★ Tiffany blue is my favorite color</p>
+          <!-- Jumps straight to the Experience panel -->
+          <button class="project-link-btn about-exp-btn" onclick="openPanel('cpExp')">See my experience →</button>
         </div>
         <div class="about-photo-col">
           <!-- Replace with your actual photo path -->
@@ -950,45 +1096,16 @@
     </div>
 
 
-    <!-- ── BLOG ── #F1AAD0 bg / #876143 header -->
-    <div class="content-panel" id="cpBlog">
-      <div class="cp-header">
-        <span class="cp-title">Blog</span>
-        <button class="cp-close" onclick="closeBlogDetail()">X</button>
-      </div>
-      <div class="cp-body">
-
-        <!-- Blog list view (shown by default) -->
-        <div id="blogList"></div>
-
-        <!-- Blog detail view (shown when an entry is clicked) -->
-        <div id="blogDetail">
-          <button class="blog-detail-back" onclick="closeBlogDetail()">← back</button>
-          <div class="blog-detail-title" id="blogDetailTitle"></div>
-          <div class="blog-detail-date"  id="blogDetailDate"></div>
-          <!-- Optional hero image at the top (hidden if no img) -->
-          <img class="blog-detail-img" id="blogDetailImg" src="" alt="" style="display:none;">
-          <!-- Two-column body: text + optional side photo -->
-          <div class="blog-detail-inner">
-            <div class="blog-detail-body" id="blogDetailBody"></div>
-            <img class="blog-detail-side-img" id="blogDetailSideImg" src="" alt="" style="display:none;">
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-
-    <!-- ── DESIGN PROJECTS ── #F07D48 bg / #37B1E9 header -->
+    <!-- ── PROJECTS ── #F07D48 bg / #37B1E9 header (design + code on one page) -->
     <div class="content-panel" id="cpDesign">
       <div class="cp-header">
-        <span class="cp-title">Design Projects</span>
+        <span class="cp-title">Projects</span>
         <button class="cp-close" onclick="closeDesignDetail()">X</button>
       </div>
       <div class="cp-body">
         <div id="designList"></div>
         <div id="designDetail">
-          <button class="design-detail-back" onclick="closeDesignDetail()">← back</button>
+          <button class="design-detail-back" onclick="closeDesignDetail()">← Back</button>
           <div class="design-detail-title" id="designDetailTitle"></div>
           <div class="design-detail-tag"   id="designDetailTag"></div>
           <img class="design-detail-img" id="designDetailImg" src="" alt="" style="display:none;">
@@ -998,40 +1115,23 @@
     </div>
 
 
-    <!-- ── CODE PROJECTS ── #F5B8C6 bg / #A99CFD header -->
-    <div class="content-panel" id="cpCode">
+    <!-- ── EXPERIENCE ── #D4F6FF bg / #0a8f8a header
+         The "LinkedIn 2.0" page. The cards are built by JS from the
+         EXPERIENCE array near the bottom of this file — edit that, not this. -->
+    <div class="content-panel" id="cpExp">
       <div class="cp-header">
-        <span class="cp-title">Code Projects</span>
-        <button class="cp-close" onclick="closeCodeDetail()">X</button>
+        <span class="cp-title">Experience</span>
+        <button class="cp-close" onclick="closeExpDetail()">X</button>
       </div>
       <div class="cp-body">
-        <div id="codeList"></div>
-        <div id="codeDetail">
-          <button class="code-detail-back" onclick="closeCodeDetail()">← back</button>
-          <div class="code-detail-title" id="codeDetailTitle"></div>
-          <div class="code-detail-tag"   id="codeDetailTag"></div>
-          <img class="code-detail-img" id="codeDetailImg" src="" alt="" style="display:none;">
-          <div class="code-detail-body" id="codeDetailBody"></div>
+        <div id="expList"></div>
+        <div id="expDetail">
+          <button class="exp-detail-back" onclick="closeExpDetail()">← Back</button>
+          <div class="exp-detail-title" id="expDetailTitle"></div>
+          <div class="exp-detail-tag"   id="expDetailTag"></div>
+          <img class="exp-detail-img" id="expDetailImg" src="" alt="" style="display:none;">
+          <div class="exp-detail-body" id="expDetailBody"></div>
         </div>
-      </div>
-    </div>
-
-
-    <!-- ── SOCIALS ── #ADF7EB bg / #876143 header -->
-    <div class="content-panel" id="cpSocials">
-      <div class="cp-header">
-        <span class="cp-title">Socials</span>
-        <button class="cp-close" onclick="closePanel('cpSocials')">X</button>
-      </div>
-      <div class="cp-body">
-        <a class="social-card" href="https://github.com/Charmination" target="_blank" rel="noopener">
-          Github
-          <span class="social-card-url">github.com/Charmination</span>
-        </a>
-        <a class="social-card" href="https://www.linkedin.com/in/bonnie-peng-846183260/" target="_blank" rel="noopener">
-          LinkedIn
-          <span class="social-card-url">linkedin.com/in/bonnie-peng-846183260</span>
-        </a>
       </div>
     </div>
 
@@ -1040,48 +1140,22 @@
          OVERLAY PANELS — higher z-index, covers content panels
          ═══════════════════════════════════════════════════════ -->
 
-    <!-- ── TREASURE CHEST / GALLERY — carousel of photos/links ── -->
+    <!-- ── TREASURE CHEST — grid of clickable boxes, each a different feature ── -->
     <div class="overlay-panel" id="galleryPanel">
       <div class="cp-header">
-        <span class="cp-title">📦 Treasure Chest</span>
+        <span class="cp-title">Treasure Chest</span>
         <button class="cp-close" id="galClose">X</button>
       </div>
       <div class="cp-body">
-        <div class="carousel-wrapper">
-          <button class="carousel-arrow" id="carouselPrev" disabled>◀</button>
-          <div class="carousel-viewport" id="carouselViewport">
-            <!-- ✏️ Add more .chest-icon-card divs here for more gallery items -->
-            <div class="carousel-track" id="carouselTrack">
-
-              <!-- Spotify playlist card -->
-              <div class="chest-icon-card" onclick="openChestItem('spotify')">
-                <img class="chest-icon-img" src="images/Gracie_Abrams.webp" alt="Gracie Abrams">
-                <div class="chest-icon-label">bonnie's<br>playlist</div>
-              </div>
-
-              <!-- Coming-soon placeholders — fill these in later! -->
-              <div class="chest-icon-card" onclick="openChestItem('soon2')">
-                <div class="chest-icon-placeholder">coming<br>soon<br>???</div>
-                <div class="chest-icon-label">coming<br>soon</div>
-              </div>
-
-              <div class="chest-icon-card" onclick="openChestItem('soon3')">
-                <div class="chest-icon-placeholder">coming<br>soon<br>???</div>
-                <div class="chest-icon-label">coming<br>soon</div>
-              </div>
-
-            </div><!-- /carouselTrack -->
-          </div><!-- /carouselViewport -->
-          <button class="carousel-arrow" id="carouselNext">▶</button>
-        </div><!-- /carousel-wrapper -->
-        <div class="carousel-dots" id="carouselDots"></div>
+        <!-- Boxes are built by JS from CHEST_ITEMS (search for it below) -->
+        <div class="chest-grid" id="chestGrid"></div>
       </div>
     </div>
 
 
-    <!-- Chest item popup (Spotify embed, "coming soon" messages) -->
+    <!-- Chest item popup (Gracie live links, "coming soon" messages) -->
     <div class="chest-item-popup" id="chestItemPopup">
-      <button class="cip-close" id="cipClose">✕</button>
+      <button class="cip-close" id="cipClose" aria-label="Close">X</button>
       <div class="cip-title"   id="cipTitle"></div>
       <div id="cipContent"></div>
     </div>
@@ -1090,7 +1164,8 @@
     <!-- ── FEEDBACK OVERLAY — message-in-a-bottle form ── -->
     <div class="overlay-base" id="feedbackOverlay">
       <button class="ov-close" id="fbClose">X</button>
-      <div class="ov-title">✉ message in a bottle</div>
+      <div class="ov-title">message in a bottle</div>
+      <div class="ov-sub">Send feedback to feed the fish.</div>
 
       <!-- Formspree form — replace the action URL with your own Formspree endpoint -->
       <form id="feedbackForm" action="https://formspree.io/f/mbdeeaza" method="POST">
@@ -1101,22 +1176,31 @@
         <textarea class="ov-textarea" id="fbMsg" name="message" placeholder="say something nice :)"></textarea>
 
         <button class="ov-btn" type="submit">SEND IT ✦</button>
+        <div class="fb-status" id="fbStatus" aria-live="polite"></div>
       </form>
     </div>
 
 
-    <!-- ── PEARL OF WISDOM — fortune from the clam ── -->
+    <!-- ── THE CONTACT CLAM — opens when you click the clam ──
+         To add another way to reach you (email, Instagram...), copy one
+            <a class="pearl-link"> line and change the href + text.        -->
     <div class="pearl-overlay" id="pearlOverlay">
-      <button class="pearl-close" id="pearlClose">✕</button>
-      <div class="pearl-title">✦ Pearl of Wisdom ✦</div>
-      <div class="pearl-subtitle">fortune of the day</div>
-      <div class="pearl-gem">🔮</div>
-      <div class="fortune-slip">
-        <div class="fortune-text"  id="fortuneText">The clam is thinking...</div>
-        <hr  class="fortune-divider">
-        <div class="fortune-lucky" id="fortuneLucky">lucky numbers: —</div>
+      <button class="pearl-close" id="pearlClose" aria-label="Close">X</button>
+      <div class="pearl-title">The Contact Clam</div>
+      <div class="pearl-subtitle">Ways to reach Bonnie</div>
+
+      <div class="pearl-links">
+        <a class="pearl-link" href="https://www.linkedin.com/in/bonnie-peng-846183260/" target="_blank" rel="noopener">
+          LinkedIn <span class="pearl-link-sub">linkedin.com/in/bonnie-peng-846183260</span>
+        </a>
+        <a class="pearl-link" href="https://github.com/Charmination" target="_blank" rel="noopener">
+          GitHub <span class="pearl-link-sub">github.com/Charmination</span>
+        </a>
+        <!-- Opens the message-in-a-bottle form (sends straight to Bonnie's inbox) -->
+        <button class="pearl-link pearl-link-bottle" id="pearlBottleBtn">
+          send me a message <span class="pearl-link-sub">via the message in a bottle</span>
+        </button>
       </div>
-      <div class="pearl-refresh-hint">✨ a new fortune opens with each new day ✨</div>
     </div>
 
   </div><!-- /tank-wrap -->
@@ -1128,8 +1212,8 @@
   <div class="bottom-bar">
     <button class="feed-btn" id="feedBtn">FEED</button>
     <div class="tank-hint" id="tankHint">
-      <span class="hint-awake">click a fish to navigate · bottle = leave a message · chest = gallery · clam = fortune</span>
-      <span class="hint-sleep">lights off — fish resting, still clickable</span>
+      <span class="hint-awake">Fish = navigate · Bottle = leave a message · Chest = gallery · Clam = contact</span>
+      <span class="hint-sleep">Lights off. The fish are resting but still clickable.</span>
     </div>
   </div>
 
@@ -1233,55 +1317,145 @@
   // Random float between a and b
   function rng(a, b) { return a + Math.random() * (b - a); }
 
-  const PS  = 5;  // fish pixel scale  (1 pixel in the sprite = PS×PS screen pixels)
-  const BS  = 4;  // bottle pixel scale
-  const CS  = 5;  // chest pixel scale
-  const CLS = 5;  // clam pixel scale
+  /* Pixel scales: 1 pixel in a sprite = N×N screen pixels.
+     They shrink on phones / tablets so everything fits (see setPixelScales). */
+  let PS  = 6;  // fish
+  let BS  = 4;  // bottle
+  let CS  = 5;  // chest
+  let CLS = 5;  // clam
+  let LS  = 6;  // lamp
+
+  // Pick sizes from the screen width: phone · tablet · desktop
+  function setPixelScales() {
+    const w = window.innerWidth;
+    if (w < 600)       { PS = 3; BS = 3; CS = 3; CLS = 3; LS = 4; }   // phone
+    else if (w < 1000) { PS = 4; BS = 3; CS = 4; CLS = 4; LS = 5; }   // tablet / small laptop
+    else               { PS = 6; BS = 4; CS = 5; CLS = 5; LS = 6; }   // desktop
+  }
+  setPixelScales();
 
 
   /* ══════════════════════════════════════════════════════════════
-     FISH PIXEL ART
-     Each function draws a pixel-art fish onto a <canvas> element.
-     The 2D arrays are pixel color maps (0 = transparent).
+     FISH PIXEL ART — fancy fantail goldfish
+     ──────────────────────────────────────────────────────────────
+     All three fish share ONE drawing (GOLDFISH_SPRITE) and just use
+     different color palettes, so they always match in style.
+
+     How to read the sprite: each string is one row of pixels, and
+     each letter picks a color from the fish's palette:
+       .  empty (see-through)     o  outline
+       b  body                    l  light belly
+       f  fin                     d  darker fin streak
+       g  gill line               s  scale sparkle
+       w  eye shine               p  pupil
+     The fish faces LEFT here; the swim code mirrors it when it
+     turns around.
      ══════════════════════════════════════════════════════════════ */
 
-  function drawBetta(c) {
-    const W=18, H=12;
-    c.width=W*PS; c.height=H*PS; c.style.width=W*PS+'px'; c.style.height=H*PS+'px';
-    const ctx=c.getContext('2d');
-    const b=[[0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0,0],[0,0,0,1,1,1,2,2,2,2,2,2,1,1,0,0,0,0],[0,0,1,2,2,2,2,3,3,3,2,2,2,2,1,0,0,0],[0,1,2,2,3,3,3,3,3,3,3,2,2,2,2,1,0,0],[1,1,2,3,3,3,3,3,3,3,3,3,2,2,1,0,0,0],[1,1,2,3,3,3,3,3,3,3,3,3,2,2,1,0,0,0],[0,1,2,2,3,3,3,3,3,3,3,2,2,2,2,1,0,0],[0,0,1,2,2,2,2,3,3,3,2,2,2,2,1,0,0,0],[0,0,0,1,1,1,2,2,2,2,2,2,1,1,0,0,0,0],[0,0,0,0,0,0,1,1,4,4,4,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0]];
-    const col={1:'#FF8C00',2:'#FFA640',3:'#FFD580',4:'#cc6600'};
-    b.forEach((row,y)=>row.forEach((v,x)=>{ if(v){ctx.fillStyle=col[v];ctx.fillRect(x*PS,y*PS,PS,PS);} }));
-    ctx.fillStyle='#fff'; ctx.fillRect(3*PS,5*PS,PS,PS);
-    ctx.fillStyle='#222'; ctx.fillRect(3*PS+1,5*PS+1,PS-2,PS-2);
+  const GOLDFISH_SPRITE = [
+    "..........ooo...............",
+    ".........offdo..........ooo.",
+    "........offddfo.......oofdo.",
+    ".......offdfffo......ofdffo.",
+    "......oobbbbbbboo...ofdfffo.",
+    "....oobbbbbbbbbbbo.ofdfffdo.",
+    "...obbbsbbbsbbbbbbofdffdfo..",
+    "..obbbbbbsbbbbsbbbffdffdo...",
+    ".obbwwpbgbbbsbbbbbffdfdo....",
+    ".obbwppbgbbbbbsbbbbffdo.....",
+    "obbbpppbgbbbbbbbbbbffdo.....",
+    "obbbbbbgbbbbbbbbbbffdfdo....",
+    ".obbblllllllllbbbbffdffdo...",
+    "..obblllllllllbbbbofdffdfo..",
+    "...obbllllllllbbbo.ofdfffdo.",
+    "....oobbllllbbboo...ofdfffo.",
+    "......ooofobfooo.....ofdffo.",
+    "........ofo.ofo.......oofdo.",
+    ".........o...o..........ooo.",
+  ];
+  const GF_W = GOLDFISH_SPRITE[0].length;   // 28 pixels wide
+  const GF_H = GOLDFISH_SPRITE.length;      // 19 pixels tall
+
+  // One palette per fish (colors match the menus they open)
+  const FISH_PALETTES = {
+    orange: { o:'#a84300', b:'#ff8c1a', l:'#ffc76b', f:'#ffb84d', d:'#ff7a00', g:'#e06a00', s:'#ffd9a0', w:'#ffffff', p:'#1a1a1a' },
+    pink:   { o:'#a8306a', b:'#ff82c2', l:'#ffd3e8', f:'#ffb3da', d:'#f0559f', g:'#e0559a', s:'#ffe0f0', w:'#ffffff', p:'#1a1a1a' },
+    teal:   { o:'#00665a', b:'#1cc8b0', l:'#a6f5e8', f:'#7ae8d8', d:'#0a9e92', g:'#0aa594', s:'#c8fff5', w:'#ffffff', p:'#1a1a1a' },
+  };
+
+  // Paint the goldfish onto a <canvas> using one palette
+  function drawGoldfish(canvas, palette) {
+    canvas.width  = GF_W * PS;
+    canvas.height = GF_H * PS;
+    canvas.style.width  = canvas.width  + 'px';
+    canvas.style.height = canvas.height + 'px';
+
+    const ctx = canvas.getContext('2d');
+    GOLDFISH_SPRITE.forEach((row, y) => {
+      [...row].forEach((ch, x) => {
+        if (ch === '.') return;                          // transparent pixel
+        ctx.globalAlpha = (ch === 'f' || ch === 'd') ? 0.82 : 1;  // jelly-see-through fins
+        ctx.fillStyle   = palette[ch];
+        ctx.fillRect(x * PS, y * PS, PS, PS);
+      });
+    });
+    ctx.globalAlpha = 1;
   }
 
-  function drawOranda(c) {
-    const W=16, H=14;
-    c.width=W*PS; c.height=H*PS; c.style.width=W*PS+'px'; c.style.height=H*PS+'px';
-    const ctx=c.getContext('2d');
-    const o=[[0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0],[0,0,0,2,2,3,3,3,3,2,2,0,0,0,0,0],[0,0,2,3,3,3,3,3,3,3,2,2,0,0,0,0],[0,2,3,3,3,1,1,1,3,3,3,2,2,0,0,0],[2,3,3,1,1,1,1,1,1,3,3,3,2,2,0,0],[2,3,1,1,1,1,1,1,1,1,3,3,2,0,0,0],[2,3,1,1,1,1,1,1,1,1,3,3,2,0,0,0],[2,3,3,1,1,1,1,1,1,3,3,3,2,0,0,0],[0,2,3,3,3,3,3,3,3,3,3,2,2,0,0,0],[0,0,2,2,3,3,3,3,3,3,2,2,0,0,0,0],[0,0,0,1,2,2,2,2,2,4,4,1,0,0,0,0],[0,0,0,0,1,1,4,4,4,1,0,0,0,0,0,0]];
-    const col={1:'#FF82C2',2:'#e0408a',3:'#f06aaa',4:'#9e2060'};
-    o.forEach((row,y)=>row.forEach((v,x)=>{ if(v){ctx.fillStyle=col[v];ctx.fillRect(x*PS,y*PS,PS,PS);} }));
-    ctx.fillStyle='#fff'; ctx.fillRect(2*PS,4*PS,PS,PS);
-    ctx.fillStyle='#222'; ctx.fillRect(2*PS+1,4*PS+1,PS-2,PS-2);
+  // Draw each fish (the canvas ids are older names, kept so nothing else breaks)
+  function drawAllFish() {
+    drawGoldfish(document.getElementById('bettaCanvas'),  FISH_PALETTES.orange);  // → Projects
+    drawGoldfish(document.getElementById('orandaCanvas'), FISH_PALETTES.pink);    // → Experience
+    drawGoldfish(document.getElementById('plecoCanvas'),  FISH_PALETTES.teal);    // → About Me
   }
+  drawAllFish();
 
-  function drawPleco(c) {
-    const W=20, H=10;
-    c.width=W*PS; c.height=H*PS; c.style.width=W*PS+'px'; c.style.height=H*PS+'px';
-    const ctx=c.getContext('2d');
-    const pl=[[0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,1,1,0,0,0],[0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,1,1,0,0],[0,0,2,3,3,1,3,1,3,1,3,1,3,1,3,3,3,1,0,0],[0,2,3,3,1,3,1,3,1,3,1,3,1,3,1,3,3,1,1,0],[2,3,3,3,3,1,3,1,3,1,3,1,3,1,3,3,3,3,2,1],[2,3,3,3,3,1,3,1,3,1,3,1,3,1,3,3,3,3,2,1],[0,2,3,3,1,3,1,3,1,3,1,3,1,3,1,3,3,1,1,0],[0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0],[0,0,0,2,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0,0],[0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,1,0,0,0,0]];
-    const col={1:'#00e5cc',2:'#006644',3:'#00aa77'};
-    pl.forEach((row,y)=>row.forEach((v,x)=>{ if(v){ctx.fillStyle=col[v];ctx.fillRect(x*PS,y*PS,PS,PS);} }));
-    ctx.fillStyle='#fff'; ctx.fillRect(1*PS,2*PS,PS,PS);
-    ctx.fillStyle='#222'; ctx.fillRect(1*PS+1,2*PS+1,PS-2,PS-2);
+
+  /* ══════════════════════════════════════════════════════════════
+     TIFFANY CEILING LAMP PIXEL ART — same idea as the goldfish sprite
+       k leading (dark lines)   t tiffany blue   T light blue shine
+       g green   a amber   r rose   d dark bronze   b bronze   y bulb
+     ══════════════════════════════════════════════════════════════ */
+  const LAMP_SPRITE = [
+    "..........kk..........",
+    ".........kddk.........",
+    ".......kGGGGGGk.......",
+    "......kGggggggGk......",
+    ".....kkkkkkkkkkkk.....",
+    "....kccrRrcccrRrck....",
+    "...kccrrrccccrrrcck...",
+    "..kkkkkkkkkkkkkkkkkk..",
+    ".kaaGaaGaaGaaGaaGaaGk.",
+    "kRRRRRRRRRRRRRRRRRRRRk",
+    "kkkkkkkkkkkkkkkkkkkkkk",
+    ".a..a..yyyyyyyy..a..a.",
+  ];
+  // Vintage stained-glass palette: dusty rose, sage green, honey amber, cream, brown leading
+  const LAMP_COLORS = {
+    k:'#3a2414',  // brown "leading" between the glass pieces
+    G:'#4f6b45',  // deep sage (crown edge)
+    g:'#7f9b6b',  // sage green
+    c:'#efdcb4',  // cream glass
+    r:'#b4606c',  // rose
+    R:'#d99a9a',  // dusty rose
+    a:'#c9963f',  // honey amber
+    y:'#fff3d6',  // warm light peeking out under the shade
+    d:'#6b4a26',  // dark bronze
+    b:'#9a7038',  // bronze
+  };
+
+  function drawLamp() {
+    const c = document.getElementById('lampCanvas');
+    c.width  = LAMP_SPRITE[0].length * LS;  c.height = LAMP_SPRITE.length * LS;
+    c.style.width = c.width + 'px';         c.style.height = c.height + 'px';
+    const ctx = c.getContext('2d');
+    LAMP_SPRITE.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = LAMP_COLORS[ch];
+      ctx.fillRect(x * LS, y * LS, LS, LS);
+    }));
   }
-
-  // Draw fish sprites onto their canvases
-  drawBetta(document.getElementById('bettaCanvas'));
-  drawOranda(document.getElementById('orandaCanvas'));
-  drawPleco(document.getElementById('plecoCanvas'));
+  drawLamp();
 
 
   /* ══════════════════════════════════════════════════════════════
@@ -1392,11 +1566,71 @@
   let chestOpen = false, clamOpen = false;
 
   // Initialize canvas dimensions and spawn floor objects
+  /* ══════════════════════════════════════════════════════════════
+     BACKDROP — a far-away underwater scene behind the tank:
+     slanted light rays + two layers of blocky pixel mountains.
+     Drawn once (and again on resize / when the lamp is toggled).
+     ══════════════════════════════════════════════════════════════ */
+  function drawBackdrop(W, H) {
+    const bc = document.getElementById('bgCanvas');
+    W = W || tankW(); H = H || tankH();
+    bc.width = W; bc.height = H;
+    const ctx = bc.getContext('2d');
+    const isDark = (typeof dark !== 'undefined') && dark;
+    const B = Math.max(4, PS + 2);                  // size of one "pixel block"
+    const snap = v => Math.round(v / B) * B;
+
+    // 1) light rays from the surface (daytime only)
+    if (!isDark) {
+      ctx.fillStyle = 'rgba(255,255,255,.11)';
+      [0.10, 0.33, 0.56, 0.78].forEach((f, i) => {
+        const x = W * f, w = W * (0.04 + (i % 2) * 0.03);
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x + w, 0);
+        ctx.lineTo(x + w + W * 0.14, H * 0.72); ctx.lineTo(x + W * 0.10, H * 0.72);
+        ctx.closePath(); ctx.fill();
+      });
+    }
+
+    // 2) mountains: each layer is a row of soft, rounded hills { x, height, width }
+    //    (all fractions of the tank size, so it scales to any screen)
+    const layers = [
+      { // far range — tall, hazy, pale
+        hills: [ [.05,.32,.13], [.24,.42,.15], [.43,.30,.12], [.60,.44,.15], [.79,.34,.13], [.96,.40,.14] ],
+        col:  isDark ? 'rgba(0,30,32,.55)'  : 'rgba(130,210,220,.50)',
+        edge: isDark ? null                 : 'rgba(235,255,255,.40)',
+      },
+      { // near hills — lower, darker
+        hills: [ [.0,.20,.12], [.18,.26,.13], [.37,.18,.11], [.56,.25,.13], [.75,.17,.11], [.93,.24,.13] ],
+        col:  isDark ? 'rgba(0,14,15,.7)'   : 'rgba(45,150,160,.50)',
+        edge: isDark ? null                 : 'rgba(170,240,235,.35)',
+      },
+    ];
+    const sandTop = H - Math.round(H * SAND_FRAC);
+
+    layers.forEach(L => {
+      for (let x = 0; x < W; x += B) {
+        // bell-curve hills: take the tallest one at each spot = gentle, rolling slopes
+        let h = 0;
+        L.hills.forEach(([hx, hh, hw]) => {
+          const d = (x / W - hx) / hw;
+          h = Math.max(h, hh * H * Math.exp(-d * d));
+        });
+        if (h <= 0) continue;
+        const y = snap(sandTop - h);
+        ctx.fillStyle = L.col;
+        ctx.fillRect(x, y, B, sandTop - y + B);
+        if (L.edge) { ctx.fillStyle = L.edge; ctx.fillRect(x, y, B, B); }
+      }
+    });
+  }
+
   function initCanvas() {
     const mc   = document.getElementById('mainCanvas');
     const W    = tankW(), H = tankH();
     const sandH = Math.round(H * SAND_FRAC);
     mc.width = W; mc.height = H; mc.style.height = H + 'px';
+    drawBackdrop(W, H);
     buildGrass(W);
     placeFloor(W, H, sandH);
   }
@@ -1562,6 +1796,36 @@
   /* ══════════════════════════════════════════════════════════════
      RENDER LOOP — draws the sand + seagrass every frame
      ══════════════════════════════════════════════════════════════ */
+  /* Pixel sea star: an 11×11 five-armed star (1 = body, 2 = shading, 3 = little dots) */
+  const SEA_STAR = [
+    ".....1.....",
+    "....111....",
+    "....121....",
+    "...11211...",
+    "11111311111",
+    ".111121111.",
+    "..1112111..",
+    "...11211...",
+    "..111.111..",
+    ".111...111.",
+    ".11.....11.",
+  ];
+  const SEA_STARS = [                         // x = across the tank, y = down into the sand (fractions)
+    { x: .30, y: .35, col: '#f08a6c', dark: '#c95a3e' },   // coral
+    { x: .52, y: .62, col: '#f2b33d', dark: '#c9861a' },   // sunny orange
+    { x: .68, y: .30, col: '#d670d3', dark: '#9a3f98' },   // orchid (matches the contact clam)
+    { x: .42, y: .78, col: '#f7a6c4', dark: '#c96f93' },   // light pink
+  ];
+  function drawSeaStar(ctx, cx, cy, col, dark) {
+    const s = Math.max(3, PS - 1);
+    const x0 = Math.round(cx - 5.5 * s), y0 = Math.round(cy - 5.5 * s);
+    SEA_STAR.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = ch === '1' ? col : ch === '2' ? dark : '#fff3d6';
+      ctx.fillRect(x0 + x * s, y0 + y * s, s, s);
+    }));
+  }
+
   function drawFrame() {
     const mc = document.getElementById('mainCanvas');
     if (!mc.width) return;
@@ -1589,6 +1853,9 @@
       ctx.fillStyle = SAND_PC[i % SAND_PC.length];
       ctx.fillRect(Math.round(px/GS)*GS, Math.round(py/GS)*GS, GS + ((i*3)%2)*2, GS);
     }
+
+    // Sea stars resting on the sand (fixed spots, clear of the clam, bottle, and chest)
+    SEA_STARS.forEach(st => drawSeaStar(ctx, W * st.x, sandTop + sandH * st.y, st.col, st.dark));
 
     // Animated seagrass stems
     stems.forEach(stem => {
@@ -1626,18 +1893,19 @@
   function areaH()       { return document.getElementById('fishArea').clientHeight || 300; }
   function areaW()       { return document.getElementById('fishArea').clientWidth  || 700; }
 
-  const MIN_SEP = 90;  // minimum pixel distance between fish centers
+  const MIN_SEP_PER_PIXEL = 28; // fish keep ~one fish-width apart (scales with fish size)
+  function minSep() { return MIN_SEP_PER_PIXEL * PS; }
   const SPD     = 0.95; // base swimming speed
 
   const fishDefs = [
-    { el: document.getElementById('fishBetta'),  w: 18*PS, h: 12*PS },
-    { el: document.getElementById('fishOranda'), w: 16*PS, h: 14*PS },
-    { el: document.getElementById('fishPleco'),  w: 20*PS, h: 10*PS },
+    { el: document.getElementById('fishBetta'),  w: GF_W*PS, h: GF_H*PS },
+    { el: document.getElementById('fishOranda'), w: GF_W*PS, h: GF_H*PS },
+    { el: document.getElementById('fishPleco'),  w: GF_W*PS, h: GF_H*PS },
   ];
 
   // Give each fish a random starting position and velocity
   fishDefs.forEach((f, i) => {
-    f.x = 80 + i * 220; f.y = 50 + i * 50;
+    f.x = 60 + i * 240; f.y = 50 + i * 50;
     const a = Math.random() * Math.PI * 2;
     f.vx = Math.cos(a) * SPD; f.vy = Math.sin(a) * SPD * .45;
     f.facing = f.vx > 0;
@@ -1653,16 +1921,41 @@
 
   // Check if two fish are too close (bounding box overlap)
   function overlaps(a, b) {
-    return Math.abs(a.x - b.x) < MIN_SEP && Math.abs(a.y - b.y) < MIN_SEP * .55;
+    return Math.abs(a.x - b.x) < minSep() && Math.abs(a.y - b.y) < minSep() * .55;
   }
 
   let fc = 0, swimId = null, fishFrozen = false;
+  const pellets = [];           // fish-food pellets currently sinking (see FEEDING TIME below)
+  const MAX_PELLETS = 3;
 
   function swim() {
     const W=areaW(), H=areaH(), YMIN=titleBottom()+4, YMAX=H-Math.round(H*SAND_FRAC)-4;
     fc++;
+
+    // pellets sink slowly and settle just above the sand
+    pellets.forEach(p => {
+      if (p.y < YMAX - 14) p.y += 0.45;
+      p.x += Math.sin(fc / 20 + p.y / 30) * 0.15;     // gentle sideways drift
+      placePellet(p);
+    });
+
     fishDefs.forEach((f, i) => {
       if (fishFrozen) return;
+
+      // chasing a pellet? steer toward it (mouth = the front of the fish)
+      if (f.target) {
+        const p = f.target;
+        const mouthX = f.facing ? f.x + f.w * .9 : f.x + f.w * .1;
+        const mouthY = f.y + f.h * .5;
+        const dx = p.x - mouthX, dy = p.y - mouthY, d = Math.hypot(dx, dy);
+        if (d < Math.max(14, PS * 4)) { eatPellet(f, p); }
+        else {
+          f.vx += (dx / d) * 0.12; f.vy += (dy / d) * 0.12;   // accelerate toward it
+          // turn to face the pellet so the mouth leads
+          const nfc = (p.x > f.x + f.w / 2); if (nfc !== f.facing) { f.facing = nfc; setDir(f); }
+        }
+      }
+
       let nx = f.x + f.vx, ny = f.y + f.vy;
       // Bounce off tank walls
       if (nx < 4)           { nx=4;          f.vx = Math.abs(f.vx)+.06; f.vy+=rng(-.28,.28); }
@@ -1685,12 +1978,13 @@
       if (!blocked) { f.x=nx; f.y=ny; }
       // Clamp speed
       const sp=Math.sqrt(f.vx*f.vx+f.vy*f.vy);
-      if (sp > 1.5) { f.vx=f.vx/sp*1.5; f.vy=f.vy/sp*1.5; }
+      const maxSp = f.target ? 2.6 : 1.5;                // hungry fish swim faster
+      if (sp > maxSp) { f.vx=f.vx/sp*maxSp; f.vy=f.vy/sp*maxSp; }
       if (sp < .38) { const bv=.38/sp; f.vx*=bv; f.vy*=bv; }
       // Random direction nudge every ~150 frames
-      if (fc%150===i*50) { f.vx+=rng(-.38,.38); f.vy+=rng(-.22,.22); }
-      // Flip sprite if direction changed
-      const nf = f.vx > 0; if (nf !== f.facing) { f.facing=nf; setDir(f); }
+      if (fc%150===i*50 && !f.target) { f.vx+=rng(-.38,.38); f.vy+=rng(-.22,.22); }
+      // Flip sprite if direction changed (chasing fish already face their pellet)
+      if (!f.target) { const nf = f.vx > 0; if (nf !== f.facing) { f.facing=nf; setDir(f); } }
       f.el.style.left=f.x+'px'; f.el.style.top=f.y+'px';
     });
     swimId = requestAnimationFrame(swim);
@@ -1699,77 +1993,67 @@
 
 
   /* ══════════════════════════════════════════════════════════════
-     CAROUSEL — treasure chest icon slider
-     ══════════════════════════════════════════════════════════════ */
-  const track      = document.getElementById('carouselTrack');
-  const viewport   = document.getElementById('carouselViewport');
-  const prevBtn    = document.getElementById('carouselPrev');
-  const nextBtn    = document.getElementById('carouselNext');
-  const dotsEl     = document.getElementById('carouselDots');
-  let carouselIndex = 0, carouselCards = [];
-
-  // Build dot indicators
-  function buildDots(count) {
-    dotsEl.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'carousel-dot' + (i===0?' active':'');
-      dot.addEventListener('click', () => goToCard(i));
-      dotsEl.appendChild(dot);
-    }
-  }
-
-  // Slide to a specific card index
-  function goToCard(index) {
-    carouselCards = track.querySelectorAll('.chest-icon-card');
-    const count  = carouselCards.length;
-    carouselIndex = Math.max(0, Math.min(index, count-1));
-    const gap  = parseInt(getComputedStyle(track).gap) || 20;
-    const cardW = carouselCards[0] ? carouselCards[0].offsetWidth : 150;
-    track.style.transform = `translateX(-${carouselIndex * (cardW + gap)}px)`;
-    document.querySelectorAll('.carousel-dot').forEach((d,i)=>d.classList.toggle('active',i===carouselIndex));
-    prevBtn.disabled = carouselIndex === 0;
-    nextBtn.disabled = carouselIndex === count - 1;
-  }
-
-  prevBtn.addEventListener('click', e => { e.stopPropagation(); goToCard(carouselIndex-1); });
-  nextBtn.addEventListener('click', e => { e.stopPropagation(); goToCard(carouselIndex+1); });
-
-  function initCarousel() {
-    carouselCards = track.querySelectorAll('.chest-icon-card');
-    buildDots(carouselCards.length);
-    carouselIndex = 0;
-    track.style.transform = 'translateX(0)';
-    prevBtn.disabled = true;
-    nextBtn.disabled = carouselCards.length <= 1;
-  }
-
-
-  /* ══════════════════════════════════════════════════════════════
      CHEST ITEM POPUPS
-     ✏️ Add new keys here and matching .chest-icon-card divs in HTML.
+     TO ADD A NEW BOX: add an entry with label, img (optional),
+        title and html. It appears in the chest grid automatically.
+        Empty "locked" boxes fill the rest of the grid until you do.
      ══════════════════════════════════════════════════════════════ */
   const CHEST_ITEMS = {
-    spotify: {
-      title: '🎵 bonnie\'s playlist',
-      html: `<div class="spotify-popup-inner">
-        <iframe style="border-radius:12px;display:block;"
-          src="https://open.spotify.com/embed/playlist/5qmBjqvkEAfKrYwT78lC4p?utm_source=generator&si=32f98a9ed8b84739"
-          width="100%" height="352" frameBorder="0" allowfullscreen=""
-          allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture"
-          loading="lazy"></iframe></div>`
+    // Gracie Abrams live performances. Each button opens YouTube search
+    // results for that show (new uploads appear automatically, and the
+    // links can't break the way a single video link can).
+    // To add a show: copy one { label, q } line. q = what to search for.
+    gracie: {
+      label: 'Gracie<br>Live',                 // text under the box
+      img:   'images/Gracie_Abrams.webp',      // picture on the box
+      title: 'Gracie Abrams · Live',
+      html: (() => {
+        const SHOWS = [
+          { label: 'Saturday Night Live · That\'s So True',       q: 'Gracie Abrams That\'s So True Live SNL' },
+          { label: 'Saturday Night Live · I Love You, I\'m Sorry', q: 'Gracie Abrams I Love You I\'m Sorry Live SNL' },
+          { label: 'Glastonbury 2025 · Other Stage',               q: 'Gracie Abrams Glastonbury 2025' },
+          { label: 'Glastonbury 2025 · Just Like Heaven cover',    q: 'Gracie Abrams Just Like Heaven Glastonbury' },
+          { label: 'Austin City Limits',                           q: 'Gracie Abrams Austin City Limits' },
+          { label: 'Apple Music Live',                             q: 'Gracie Abrams Apple Music Live' },
+          { label: 'The Secret of Us Tour',                        q: 'Gracie Abrams The Secret of Us Tour live' },
+        ];
+        const yt = q => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+        return `<div class="gracie-list">
+          ${SHOWS.map(s => `<a class="gracie-link" href="${yt(s.q)}" target="_blank" rel="noopener">▶ ${s.label}</a>`).join('')}
+          <a class="gracie-link gracie-all" href="${yt('Gracie Abrams live performance')}" target="_blank" rel="noopener">Every live performance on YouTube ↗</a>
+        </div>`;
+      })()
     },
-    soon2: {
-      title: '✨ coming soon',
-      html: `<div class="coming-soon-inner"><div class="coming-soon-emoji">🚧</div>
-        <div class="coming-soon-text">something cool is<br>being assembled here...<br><br>check back soon!</div></div>`
-    },
-    soon3: {
-      title: '🌊 coming soon',
-      html: `<div class="coming-soon-inner"><div class="coming-soon-emoji">🔧</div>
-        <div class="coming-soon-text">still under construction...<br><br>the fish are working on it 🐟</div></div>`
+    // Shown when someone clicks an empty box
+    soon: {
+      title: 'Coming Soon',
+      html: `<div class="coming-soon-inner"><div class="coming-soon-emoji">?</div>
+        <div class="coming-soon-text">This box is still locked.<br><br>The fish are working on it.</div></div>`
     },
   };
+
+  // Build the grid of boxes from CHEST_ITEMS (+ locked boxes to fill 3×3)
+  function renderChestGrid() {
+    const grid = document.getElementById('chestGrid');
+    const real = Object.entries(CHEST_ITEMS).filter(([key, item]) => item.label);
+    const total = Math.max(9, Math.ceil(real.length / 3) * 3);   // at least 3×3
+
+    let html = real.map(([key, item]) => `
+      <div class="chest-icon-card" onclick="openChestItem('${key}')">
+        ${item.img ? `<img class="chest-icon-img" src="${item.img}" alt="">`
+                   : `<div class="chest-icon-placeholder">✦</div>`}
+        <div class="chest-icon-label">${item.label}</div>
+      </div>`).join('');
+
+    for (let i = real.length; i < total; i++) {
+      html += `
+      <div class="chest-icon-card locked" onclick="openChestItem('soon')">
+        <div class="chest-icon-placeholder">?</div>
+        <div class="chest-icon-label">Coming<br>Soon</div>
+      </div>`;
+    }
+    grid.innerHTML = html;
+  }
 
   function openChestItem(key) {
     const item = CHEST_ITEMS[key];
@@ -1790,24 +2074,8 @@
 
   /* ══════════════════════════════════════════════════════════════
      POPUP / PANEL MANAGEMENT
-     Two-level navigation: fish → nav popup → content panel
+     One click: fish → its content panel
      ══════════════════════════════════════════════════════════════ */
-
-  // Position a small popup near a fish element, staying within viewport
-  function posPopup(popup, fishEl) {
-    const vw=window.innerWidth, vh=window.innerHeight, PAD=10;
-    const fr = fishEl.getBoundingClientRect();
-    popup.style.visibility='hidden'; popup.style.display='block';
-    const pw=popup.offsetWidth, ph=popup.offsetHeight;
-    popup.style.display=''; popup.style.visibility='';
-    let l=fr.left+fr.width/2-pw/2, t=fr.top-ph-10;
-    if (t < PAD)        t = fr.bottom+10;
-    if (t+ph > vh-PAD)  t = vh-ph-PAD;
-    if (l < PAD)        l = PAD;
-    if (l+pw > vw-PAD)  l = vw-pw-PAD;
-    if (t < PAD)        t = PAD;
-    popup.style.left = l+'px'; popup.style.top = t+'px';
-  }
 
   // Center a small overlay inside the tank
   function posOverlay(ov) {
@@ -1819,9 +2087,8 @@
     ov.style.top   = Math.max(PAD, (H-oh)/2)+'px';
   }
 
-  // Hide all nav popups (and unfreeze fish)
+  // Let the fish swim again (they pause while a page is open)
   function closeNavPopups() {
-    document.querySelectorAll('.nav-popup').forEach(p => p.classList.remove('show'));
     fishFrozen = false;
   }
 
@@ -1837,9 +2104,8 @@
     if (p) {
       p.classList.add('show');
       // Refresh list content when relevant panels are opened
-      if (id === 'cpBlog')   { resetBlogView();   renderBlogList();   }
       if (id === 'cpDesign') { resetDesignView();  renderDesignList(); }
-      if (id === 'cpCode')   { resetCodeView();    renderCodeList();   }
+      if (id === 'cpExp')    { resetExpView();     renderExpList();    }
     }
   }
 
@@ -1850,20 +2116,25 @@
   }
 
   // Prevent clicks inside popups/panels from bubbling up to the global close handler
-  document.querySelectorAll('.nav-popup').forEach(p  => p.addEventListener('click', e => e.stopPropagation()));
   document.querySelectorAll('.content-panel').forEach(p => p.addEventListener('click', e => e.stopPropagation()));
 
 
-  /* ── FISH CLICK HANDLERS ── */
-  [['fishBetta','navBetta'],['fishOranda','navOranda'],['fishPleco','navPleco']].forEach(([fid,nid]) => {
-    const fe = document.getElementById(fid);
-    const np = document.getElementById(nid);
-    fe.addEventListener('click', e => {
+  /* ── FISH CLICK HANDLERS ──
+     Each fish opens ONE page straight away. Click the same fish again
+     (while its page is open) to close it.
+     To change what a fish opens, change the panel id on the right. */
+  const FISH_PAGES = {
+    fishBetta:  'cpDesign',   // gold fish → Projects
+    fishOranda: 'cpExp',      // pink fish → Experience
+    fishPleco:  'cpAbout',    // teal fish → About Me
+  };
+  Object.entries(FISH_PAGES).forEach(([fishId, panelId]) => {
+    document.getElementById(fishId).addEventListener('click', e => {
       e.stopPropagation();
-      getAC().resume().then(() => sfxFishBloop(fid));
-      const wasOpen = np.classList.contains('show');
-      closeNavPopups(); closeAllPanels(); closeSmallOverlays();
-      if (!wasOpen) { posPopup(np, fe); np.classList.add('show'); fishFrozen = true; }
+      getAC().resume().then(() => sfxFishBloop(fishId));
+      const panel = document.getElementById(panelId);
+      if (panel.classList.contains('show')) { closePanel(panelId); return; }
+      openPanel(panelId);
     });
   });
 
@@ -1874,9 +2145,15 @@
     dark = !dark;
     if (dark) sfxLampOff(); else sfxLampOn();
     document.getElementById('tank').classList.toggle('dark-mode', dark);
-    document.getElementById('lampHead').classList.toggle('off', dark);
-    document.getElementById('lampGlow').classList.toggle('off', dark);
-    document.getElementById('lampLabel').textContent = dark ? 'OFF' : 'ON';
+    drawBackdrop();
+    const lamp = document.getElementById('lampBtn');
+    lamp.classList.toggle('off', dark);
+    lamp.setAttribute('aria-label', dark ? 'Turn the aquarium light on' : 'Turn the aquarium light off');
+    document.getElementById('lampLabel').textContent = dark ? 'Click me (off)' : 'Click me (on)';
+    // tug the pull string down for a moment
+    const pull = document.getElementById('lampPull');
+    pull.classList.add('pulled');
+    setTimeout(() => pull.classList.remove('pulled'), 160);
     document.getElementById('tankHint').classList.toggle('dark-hint', dark);
     if (dark) {
       cancelAnimationFrame(swimId); swimId = null;
@@ -1917,7 +2194,14 @@
     document.getElementById('feedbackOverlay').classList.remove('show');
   });
 
-  // Also open feedback when the bottom FEED button is clicked
+  /* ══════════════════════════════════════════════════════════════
+     FEEDING TIME
+     Press FEED → a pellet drops in and slowly sinks. One fish (picked
+     at random) swims over to it, still avoiding the other fish, eats
+     it, and says "thank you for your FEEDback!"
+     ══════════════════════════════════════════════════════════════ */
+
+  // FEED opens the feedback form. Food only drops once a message is SENT.
   document.getElementById('feedBtn').addEventListener('click', e => {
     e.stopPropagation(); sfxFeed();
     const fo = document.getElementById('feedbackOverlay');
@@ -1926,32 +2210,94 @@
     if (!was) { posOverlay(fo); fo.classList.add('show'); }
   });
 
-  // Handle Formspree form submission with hearts animation
-  document.getElementById('feedbackForm').addEventListener('submit', e => {
-    // Formspree handles the actual submission; this just plays the animation
-    setTimeout(() => {
-      document.getElementById('fbEmail').value = '';
-      document.getElementById('fbMsg').value   = '';
-      setTimeout(() => document.getElementById('feedbackOverlay').classList.remove('show'), 1800);
-      const area = document.getElementById('fishArea'), f = fishDefs[1];
+  // Drop one pellet; a random fish (not already chasing one) swims over and eats it
+  function dropPellet() {
+    if (pellets.length >= MAX_PELLETS) return;
+    const hungry = fishDefs.filter(f => !f.target);
+    if (!hungry.length) return;
+    const fish = hungry[Math.floor(Math.random() * hungry.length)];
+    if (dark) document.getElementById('lampBtn').click();   // lights off: wake the tank up first
+    sfxFeed();
+    const W = areaW();
+    const el = document.createElement('div');
+    el.className = 'pellet';
+    document.getElementById('fishArea').appendChild(el);
+    // drop it on the far side of the tank from the chosen fish, so you can watch it swim over
+    const fishMid = fish.x + fish.w / 2;
+    const px = fishMid > W / 2 ? rng(W * .08, W * .38) : rng(W * .62, W * .92);
+    const pellet = { el, x: px, y: titleBottom() + 6, fish };
+    pellets.push(pellet);
+    fish.target = pellet;
+    placePellet(pellet);
+  }
+
+  function placePellet(p) { p.el.style.left = p.x + 'px'; p.el.style.top = p.y + 'px'; }
+
+  // Show a little speech bubble above a fish
+  function fishSays(f, text) {
+    const area = document.getElementById('fishArea');
+    const ty = document.createElement('div');
+    ty.className = 'ty-msg'; ty.textContent = text;
+    ty.style.left = Math.max(4, Math.min(f.x, areaW() - 260)) + 'px';
+    // above the fish, or below it if the fish is up near the title bar
+    const above = f.y - 34;
+    ty.style.top  = (above > titleBottom() + 4 ? above : f.y + f.h + 6) + 'px';
+    area.appendChild(ty); setTimeout(() => ty.remove(), 2400);
+  }
+
+  // Called by the swim loop when a fish reaches its pellet
+  function eatPellet(f, p) {
+    p.el.remove();
+    pellets.splice(pellets.indexOf(p), 1);
+    f.target = null;
+    getAC().resume().then(() => sfxFishBloop(f.el.id));
+    fishSays(f, 'Thank you for your FEEDback!');
+    const area = document.getElementById('fishArea');
+    for (let i = 0; i < 4; i++) {          // a few happy hearts
+      setTimeout(() => {
+        const h = document.createElement('div'); h.className = 'heart'; h.textContent = '♥';
+        h.style.left = (f.x + f.w / 2 + rng(-20, 20)) + 'px';
+        h.style.top  = (f.y + rng(0, 10)) + 'px';
+        h.style.color = ['#FF82C2', '#FF6B4A', '#f2b33d'][i % 3];
+        area.appendChild(h); setTimeout(() => h.remove(), 1700);
+      }, i * 140);
+    }
+  }
+
+  /* Send the message in the background (the visitor stays in the aquarium).
+     When Formspree confirms it arrived: close the form and drop a pellet. */
+  document.getElementById('feedbackForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form   = e.target;
+    const btn    = form.querySelector('.ov-btn');
+    const status = document.getElementById('fbStatus');
+    if (!document.getElementById('fbMsg').value.trim()) {
+      status.textContent = 'Write a little message first.'; status.className = 'fb-status err'; return;
+    }
+    btn.disabled = true; btn.textContent = 'Sending...';
+    status.textContent = ''; status.className = 'fb-status';
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }
+      });
+      if (!res.ok) throw new Error('send failed');
+      form.reset();
       sfxBottle();
-      for (let i = 0; i < 8; i++) {
-        setTimeout(() => {
-          const h = document.createElement('div'); h.className='heart'; h.textContent='♥';
-          h.style.left  = (f.x + rng(0,28))+'px';
-          h.style.top   = (f.y + rng(0,10))+'px';
-          h.style.color = ['#FF82C2','#FF6B4A','#fcf4af','#87ffdd'][0|Math.random()*4];
-          area.appendChild(h); setTimeout(()=>h.remove(),1700);
-        }, i*155);
-      }
-      const ty=document.createElement('div'); ty.className='ty-msg'; ty.textContent='thank you for your feedback!';
-      ty.style.left=(f.x-15)+'px'; ty.style.top=(f.y-44)+'px';
-      area.appendChild(ty); setTimeout(()=>ty.remove(),2400);
-    }, 200);
+      status.textContent = 'Sent! Here comes a snack.'; status.className = 'fb-status ok';
+      setTimeout(() => {
+        document.getElementById('feedbackOverlay').classList.remove('show');
+        status.textContent = '';
+        dropPellet();                       // the reward
+      }, 900);
+    } catch (err) {
+      status.textContent = 'That didn\'t send. Please try again.'; status.className = 'fb-status err';
+    } finally {
+      btn.disabled = false; btn.textContent = 'SEND IT ✦';
+    }
   });
 
 
-  /* ── CHEST (opens gallery carousel) ── */
+  /* ── CHEST (opens the grid of boxes) ── */
   document.getElementById('chestBtn').addEventListener('click', e => {
     e.stopPropagation();
     const newOpen = !chestOpen;
@@ -1960,7 +2306,7 @@
     if (newOpen) {
       closeNavPopups(); closeAllPanels(); closeSmallOverlays();
       document.getElementById('galleryPanel').classList.add('show');
-      setTimeout(initCarousel, 50); // wait for DOM to render before measuring card widths
+      renderChestGrid();
     } else {
       document.getElementById('galleryPanel').classList.remove('show');
     }
@@ -1974,49 +2320,18 @@
 
 
   /* ══════════════════════════════════════════════════════════════
-     PEARL OF WISDOM
-     Reads fortunes from fortunes.txt (one per line).
-     Same fortune shown all day — changes at midnight.
+     THE CONTACT CLAM — the clam opens to show ways to reach Bonnie
      ══════════════════════════════════════════════════════════════ */
-  let FORTUNES = ['The clam is thinking. Check back soon.'];
 
-  async function loadFortunes() {
-    try {
-      const res = await fetch('fortunes.txt');
-      if (!res.ok) throw new Error();
-      const lines = await res.text();
-      const ls = lines.split('\n').map(l=>l.trim()).filter(l=>l);
-      if (ls.length > 0) FORTUNES = ls;
-    } catch(e) {
-      console.warn('Could not load fortunes.txt — using default.');
-    }
-  }
-  loadFortunes();
-
-  // Deterministic hash so the same date always picks the same fortune
-  function dateHash(seed) {
-    let h = seed;
-    h = ((h>>16)^h) * 0x45d9f3b;
-    h = ((h>>16)^h) * 0x45d9f3b;
-    return Math.abs((h>>16)^h);
-  }
-
-  function getTodaysFortune() {
-    const n = new Date();
-    const s = n.getFullYear()*10000 + (n.getMonth()+1)*100 + n.getDate();
-    return FORTUNES[dateHash(s) % FORTUNES.length];
-  }
-
-  function getTodaysLuckyNumbers() {
-    const n = new Date();
-    const b = n.getFullYear()*10000 + (n.getMonth()+1)*100 + n.getDate();
-    return Array.from({length:6}, (_,i) => (dateHash(b+i*7919) % 99) + 1);
-  }
-
-  function populateFortune() {
-    document.getElementById('fortuneText').textContent  = getTodaysFortune();
-    document.getElementById('fortuneLucky').textContent = 'lucky numbers: ' + getTodaysLuckyNumbers().join(' ');
-  }
+  // "send me a message" → close the clam and open the bottle form
+  document.getElementById('pearlBottleBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    closeAll();                                   // closes the clam + pearl
+    const fo = document.getElementById('feedbackOverlay');
+    sfxBottle();
+    posOverlay(fo);
+    fo.classList.add('show');
+  });
 
   // Clam click: toggle open/closed + show/hide pearl overlay
   document.getElementById('clamBtn').addEventListener('click', e => {
@@ -2025,7 +2340,7 @@
     if (newOpen) sfxClamOpen(); else sfxClamClose();
     setClamOpen(newOpen);
     const po = document.getElementById('pearlOverlay');
-    if (newOpen) { closeNavPopups(); closeAllPanels(); closeSmallOverlays(); populateFortune(); posOverlay(po); po.classList.add('show'); }
+    if (newOpen) { closeNavPopups(); closeAllPanels(); closeSmallOverlays(); posOverlay(po); po.classList.add('show'); }
     else         { po.classList.remove('show'); }
   });
   document.getElementById('pearlOverlay').addEventListener('click', e => e.stopPropagation());
@@ -2037,235 +2352,812 @@
 
 
   /* ══════════════════════════════════════════════════════════════
-     BLOG POSTS
-     ✏️ To add an entry: copy one object below, fill in the fields,
-        and save. The thumbnail icon goes in images/.
-        sideImg is optional — shows to the right of the text.
+     CARD SECTIONS — Experience + Projects
+     ──────────────────────────────────────────────────────────────
+     All three panels work the same way:
+       1. A LIST of clickable cards (title, subtitle, little thumbnail)
+       2. Clicking a card swaps to a DETAIL view with the full story
+       3. "← back" (or X) returns to the list
+
+     So instead of writing the same code three times, there is ONE
+     engine (makeCardSection) and three plain data arrays below it.
+
+     TO ADD SOMETHING NEW: copy one { ... } block in the right
+        array, paste it where you want it in the list, and edit it.
+        Every field except title is optional — leave it out or use ''.
+
+     FIELDS YOU CAN USE IN EACH ENTRY
+       title     – big text on the card                 'Custom PC Build'
+       tag       – small line under the title           'Robotics Club · 2024'
+       group     – optional heading the card sits under 'research'
+       icon      – small square thumbnail in the list   'images/linkedin/pc.jpg'
+       img       – wide photo at the top of the detail  'images/...'
+       body      – paragraphs (blank line = new para)   `text...`
+       bullets   – list of accomplishments              ['did a thing', ...]
+       skills    – little pill tags                     ['Python', 'SEM']
+       gallery   – extra photos with captions           [{ src:'...', caption:'...' }]
+                   (add wide: true to show a photo full-width, uncropped)
+                   (add focus: '70%' to slide the crop down so the subject stays in frame)
+                   (add fit: 'contain' for diagrams/charts so nothing gets cropped)
+                   (a video works too: { video:'clip.mp4', poster:'still.jpg', caption:'...' })
+       credit    – thank-you line shown at the very end      'Model by ...'
+       sections  – headed bullet lists  [{ heading:'outcome', bullets:['...'] }]
+       parts     – sub-boxes inside the page (e.g. milestones); each part
+                   is a full entry of its own, plus kicker + summary for its box
+       preview   – a link shown as a mini web-page card { url, site, title, desc, img or icon }
+       events    – mini photo galleries, one per event   [{ title:'...', body:'...', photos:[{ src:'...' }] }]
+       links     – buttons that open in a new tab       [{ label:'github', url:'https://...' }]
+
+     IMAGES: if an image file is missing, the card just shows a
+        dashed "no img" box instead of a broken picture — so you can
+        add the photo later with the same file name and it pops in.
      ══════════════════════════════════════════════════════════════ */
-  const BLOG_POSTS = [
-    {
-      // Entry 1 — current research role
-      title:   'Machine Learning Researcher · Urban Nexus Lab',
-      date:    'June 2026 – Present',
-      icon:    'images/princetonenviro_logo.jpeg', // small thumbnail shown in the list
-      img:     '',                                 // optional full-width hero image in detail view
-      sideImg: '',                                 // optional photo shown beside the text
-      body:    `I'm currently working on a statistical analysis and data
-visualization of energy poverty and climate equity indicators
-using GLSS7 surveys across 14,000 Ghanaian households.
 
-The goal is to contribute to the broader UN project to address
-extreme heat and climate concerns for policy adaptation.`
-    },
-    {
-      // Entry 2 — UDC internship
-      title:   'R&D Engineer Intern · Universal Display Corporation',
-      date:    'June 2025 – August 2025',
-      icon:    'images/sem.JPG',        // small thumbnail in the list
-      img:     '',                      // hero image at top of detail view
-      sideImg: 'images/meAtUDC.JPG',   // side photo shown next to the text
-      body:    `I had a really awesome time at this place! Shoutout to Matthew,
-Renata, and Mike Fusella for the greatest first internship experience
-I could have asked for. I'll miss our plasmonic team walks to lunch
-every day, our philosophical banters, and the many questions I asked...
-and shoutout to Tara for making the best drinks every morning!
 
-I actually never used to drink coffee before this internship.
-Having my own desk is awesome — I feel professional, though I have
-lots to learn.
+  /* ── The engine ─────────────────────────────────────────────────
+     prefix = 'exp' | 'design'
+     It expects these elements to exist in the HTML:
+       #<prefix>List, #<prefix>Detail, #<prefix>DetailTitle,
+       #<prefix>DetailTag, #<prefix>DetailImg, #<prefix>DetailBody
+     and CSS classes like .<prefix>-card, .<prefix>-card-title, etc.
+     ─────────────────────────────────────────────────────────────── */
+  function makeCardSection(prefix, items, emptyText, showSkillLine = false) {
+    const $ = id => document.getElementById(prefix + id);   // tiny shortcut
 
-Inside the lab was where I actually learned so much. My lab mates
-are all so helpful and I'm grateful for their expertise in teaching me
-how to deposit elements and make plates for the project. I'm surprised
-at how fast time went by while inside the clean room.
+    // Small square thumbnail (or a dashed placeholder box)
+    function makeThumb(item) {
+      const placeholder = document.createElement('div');
+      placeholder.className   = prefix + '-card-img-placeholder';
+      placeholder.textContent = 'no img';
+      if (!item.icon) return placeholder;
 
-Oh! The part where I had to figure out public transportation to work
-every day felt initially daunting, but I got used to it. Having a
-routine is nice.
+      const img = document.createElement('img');
+      img.className = prefix + '-card-img';
+      img.src       = item.icon;
+      img.alt       = item.title;
+      img.loading   = 'lazy';
+      img.onerror   = () => img.replaceWith(placeholder);    // missing file → placeholder
+      return img;
+    }
 
-This was truly my favorite experience thus far — nothing comes close
-to my UDC family! Nothing but appreciation for the company that made
-my first internship experience feel so memorable and exploratory.`
-    },
-  ];
+    // Build the clickable list of cards
+    function renderList() {
+      const list = $('List');
+      list.innerHTML = '';
 
-  // Render the clickable blog card list
-  function renderBlogList() {
-    const list = document.getElementById('blogList');
-    list.innerHTML = '';
-    if (!BLOG_POSTS.length) { list.innerHTML = '<p style="font-size:clamp(7px,1vw,10px);opacity:.6;">no posts yet!</p>'; return; }
-    BLOG_POSTS.forEach((post, i) => {
-      const card = document.createElement('div'); card.className = 'blog-card';
-      card.onclick = () => openBlogDetail(i);
-      // Text column
-      const text = document.createElement('div'); text.className = 'blog-card-text';
-      text.innerHTML = `<div class="blog-card-title">${post.title}</div><div class="blog-card-date">${post.date}</div>`;
-      // Thumbnail (icon image or placeholder)
-      let thumb;
-      if (post.icon) {
-        thumb = document.createElement('img');
-        thumb.className = 'blog-card-img'; thumb.src = post.icon; thumb.alt = post.title;
-      } else {
-        thumb = document.createElement('div'); thumb.className = 'blog-card-img-placeholder'; thumb.textContent = 'no img';
+      if (!items.length) {
+        list.innerHTML = `<p style="font-size:clamp(7px,1vw,10px);opacity:.7;">${emptyText}</p>`;
+        return;
       }
-      card.appendChild(text); card.appendChild(thumb); list.appendChild(card);
-    });
-  }
 
-  // Open the detail view for one blog entry
-  function openBlogDetail(i) {
-    const post = BLOG_POSTS[i];
-    document.getElementById('blogDetailTitle').textContent = post.title;
-    document.getElementById('blogDetailDate').textContent  = post.date;
-    // Hero image (full-width, above text)
-    const heroImg = document.getElementById('blogDetailImg');
-    if (post.img) { heroImg.src = post.img; heroImg.style.display = 'block'; }
-    else          { heroImg.style.display = 'none'; }
-    // Side image (shown beside text)
-    const sideImg = document.getElementById('blogDetailSideImg');
-    if (post.sideImg) { sideImg.src = post.sideImg; sideImg.style.display = 'block'; }
-    else              { sideImg.style.display = 'none'; }
-    // Body text (each paragraph separated by blank lines)
-    document.getElementById('blogDetailBody').innerHTML =
-      post.body.split('\n\n').filter(l=>l.trim()).map(l => `<p style="margin-bottom:14px;">${l.replace(/\n/g,' ')}</p>`).join('');
-    document.getElementById('blogList').classList.add('hidden');
-    document.getElementById('blogDetail').classList.add('show');
-  }
+      let lastGroup = null;
+      items.forEach((item, i) => {
+        // Optional group heading, e.g. "research" — shown once per group
+        if (item.group && item.group !== lastGroup) {
+          const label = document.createElement('div');
+          label.className   = 'list-section-label';
+          label.textContent = item.group;
+          list.appendChild(label);
+          lastGroup = item.group;
+        }
 
-  function closeBlogDetail() {
-    const d = document.getElementById('blogDetail');
-    if (d.classList.contains('show')) { d.classList.remove('show'); document.getElementById('blogList').classList.remove('hidden'); }
-    else closePanel('cpBlog');
-  }
+        const card = document.createElement('div');
+        card.className = prefix + '-card' + (i % 2 ? ' alt' : '');   // alt = every other box gets the second color
+        card.onclick   = () => openDetail(i);
 
-  function resetBlogView() {
-    document.getElementById('blogDetail').classList.remove('show');
-    document.getElementById('blogList').classList.remove('hidden');
+        const text = document.createElement('div');
+        text.className = prefix + '-card-text';
+
+        const title = document.createElement('div');
+        title.className   = prefix + '-card-title';
+        title.textContent = item.title;
+
+        const tag = document.createElement('div');
+        tag.className   = prefix + '-card-tag';
+        tag.textContent = item.tag || '';
+
+        text.append(title, tag);
+        card.append(text, makeThumb(item));
+        list.appendChild(card);
+      });
+    }
+
+    // Turn one entry's fields into the HTML for the detail view
+    function buildDetailHTML(item) {
+      let html = '';
+
+      // Paragraphs: a blank line in `body` starts a new paragraph
+      if (item.body) {
+        html += item.body
+          .split('\n\n')
+          .filter(p => p.trim())
+          .map(p => `<p style="margin-bottom:14px;">${p.replace(/\n/g, ' ')}</p>`)
+          .join('');
+      }
+
+      // Sub-boxes: e.g. a course's milestones. Each one is its own
+      // clickable box that opens a full detail page of its own.
+      if (item.parts && item.parts.length) {
+        html += '<div class="part-grid">' + item.parts.map((pt, k) => `
+          <button class="part-card" data-part="${k}">
+            ${pt.icon ? `<img class="part-card-img" src="${pt.icon}" alt="">` : ''}
+            <span class="part-card-text">
+              <span class="part-card-kicker">${pt.kicker || ''}</span>
+              <span class="part-card-title">${pt.title}</span>
+              <span class="part-card-sum">${pt.summary || ''}</span>
+              <span class="part-card-cta">Open →</span>
+            </span>
+          </button>`).join('') + '</div>';
+      }
+
+      // Headed sections, e.g. "key design decisions" and "outcome"
+      (item.sections || []).forEach(sec => {
+        html += `<h4 class="detail-h">${sec.heading}</h4>`;
+        if (sec.bullets) html += '<ul class="detail-list">' + sec.bullets.map(b => `<li>${b}</li>`).join('') + '</ul>';
+      });
+
+      // Bullet points
+      if (item.bullets && item.bullets.length) {
+        html += '<ul class="detail-list">' +
+                item.bullets.map(b => `<li>${b}</li>`).join('') +
+                '</ul>';
+      }
+
+      // Skill chips
+      if (item.skills && item.skills.length) {
+        html += '<div class="skill-row">' +
+                item.skills.map(s => `<span class="skill-chip">${s}</span>`).join('') +
+                '</div>';
+      }
+
+      // Photo strip (each photo hides itself if the file is missing)
+      if (item.gallery && item.gallery.length) {
+        html += '<div class="detail-gallery">' +
+                item.gallery.map(g => g.video ? `
+                  <figure class="${g.wide ? 'wide' : ''}">
+                    <video src="${g.video}" poster="${g.poster || ''}" controls muted playsinline preload="none"></video>
+                    ${g.caption ? `<figcaption>${g.caption}</figcaption>` : ''}
+                  </figure>` : `
+                  <figure class="${g.wide ? 'wide' : ''}">
+                    <img src="${g.src}" style="${g.focus ? 'object-position:center ' + g.focus + ';' : ''}${g.fit ? 'object-fit:' + g.fit + ';background:#fff;' : ''}" alt="${g.caption || item.title}" loading="lazy"
+                         onerror="this.parentElement.style.display='none'">
+                    ${g.caption ? `<figcaption>${g.caption}</figcaption>` : ''}
+                  </figure>`).join('') +
+                '</div>';
+      }
+
+      // Events: a mini gallery per event (title, short description, photos)
+      (item.events || []).forEach(ev => {
+        html += `<div class="detail-event">
+          <div class="detail-event-title">${ev.title}</div>
+          ${ev.body ? `<p class="detail-event-body">${ev.body}</p>` : ''}
+          <div class="detail-gallery">
+            ${(ev.photos || []).map(ph => `
+              <figure class="${ph.wide ? 'wide' : ''}">
+                <img src="${ph.src}" alt="${ph.caption || ev.title}" loading="lazy"
+                     onerror="this.parentElement.style.display='none'">
+                ${ph.caption ? `<figcaption>${ph.caption}</figcaption>` : ''}
+              </figure>`).join('')}
+          </div>
+        </div>`;
+      });
+
+      // Link preview card — looks like a mini web page; click to open it
+      if (item.preview) {
+        const pv = item.preview;
+        html += `<a class="link-preview" href="${pv.url}" target="_blank" rel="noopener">
+          <div class="lp-thumb">${pv.img ? `<img src="${pv.img}" alt="">` : `<span>${pv.icon || '↗'}</span>`}</div>
+          <div class="lp-text">
+            <div class="lp-site">${pv.site}</div>
+            <div class="lp-title">${pv.title}</div>
+            <div class="lp-desc">${pv.desc}</div>
+            <div class="lp-cta">Open page ↗</div>
+          </div>
+        </a>`;
+      }
+
+      // Outside links (open in a new tab so the aquarium stays put)
+      (item.links || []).forEach(l => {
+        html += `<a class="project-link-btn" href="${l.url}" target="_blank" rel="noopener">${l.label} ↗</a>`;
+      });
+
+      // Credit line (e.g. who made a 3D model) — always shown last
+      if (item.credit) html += `<p class="detail-credit">Credit: ${item.credit}</p>`;
+
+      return html;
+    }
+
+    // Which page we're on, plus the pages "behind" it (for the back button)
+    let stack = [];
+
+    // Show the detail view for entry number i (from the list)
+    function openDetail(i) { stack = []; showItem(items[i]); }
+
+    // Show any item's detail page (a list entry or one of its parts)
+    function showItem(item) {
+      stack.push(item);
+      $('DetailTitle').textContent = item.title;
+      // Projects only: skills subtitle under the big title
+      let sub = $('Detail').querySelector('.skill-subtitle');
+      if (!sub) {
+        sub = document.createElement('div');
+        sub.className = 'skill-subtitle skill-subtitle-big';
+        $('DetailTitle').after(sub);
+      }
+      sub.textContent   = (showSkillLine && item.skills) ? 'Skills: ' + item.skills.join(' · ') : '';
+      sub.style.display = sub.textContent ? '' : 'none';
+      $('DetailTag').textContent   = item.tag || '';
+
+      const hero = $('DetailImg');
+      if (item.img) {
+        hero.src           = item.img;
+        hero.alt           = item.title;
+        hero.style.display = 'block';
+        hero.onerror       = () => { hero.style.display = 'none'; };
+      } else {
+        hero.style.display = 'none';
+      }
+
+      $('DetailBody').innerHTML = buildDetailHTML(item);
+      // make each sub-box open its own page
+      $('DetailBody').querySelectorAll('.part-card').forEach(btn => {
+        btn.onclick = e => { e.stopPropagation(); showItem(item.parts[+btn.dataset.part]); };
+      });
+      $('List').classList.add('hidden');
+      $('Detail').classList.add('show');
+      $('Detail').parentElement.scrollTop = 0;   // start at the top
+    }
+
+    // Back to the list (or close the panel if already on the list)
+    function closeDetail(panelId) {
+      if ($('Detail').classList.contains('show') && stack.length > 1) {
+        stack.pop();                         // inside a milestone → back to the course page
+        showItem(stack.pop());
+      } else if ($('Detail').classList.contains('show')) {
+        reset();
+      } else {
+        closePanel(panelId);
+      }
+    }
+
+    // Always start on the list view
+    function reset() {
+      stack = [];
+      $('Detail').classList.remove('show');
+      $('List').classList.remove('hidden');
+    }
+
+    return { renderList, openDetail, closeDetail, reset };
   }
 
 
   /* ══════════════════════════════════════════════════════════════
-     DESIGN PROJECTS
-     ✏️ Fill in title, tag, img, body, link, linkLabel for each entry.
+     EXPERIENCE  (the "LinkedIn 2.0" panel — newest first)
      ══════════════════════════════════════════════════════════════ */
-  const DESIGN_PROJECTS = [
+  const EXPERIENCE = [
+
+    /* ─── research ─── */
     {
-      title:     'Design Project',
-      tag:       '...',
-      img:       '',
-      body:      'fish are working on this',
-      link:      '',
-      linkLabel: 'view project'
+      group:  'research',
+      title:  'Machine Learning Researcher · Urban Nexus Lab',
+      tag:    'via High Meadows Environmental Institute · Jun 2026 – Present · Princeton, NJ',
+      icon:   'images/princetonenviro_logo.jpeg',
+      body:   `Using household survey data to measure how people in Ghana access
+cooling, transportation, and energy, and what that means for Accra's
+emissions and climate policy.`,
+      bullets: [
+        'Analyzed 14,000+ household surveys from Ghana\'s national Living Standards Survey (GLSS7) against Accra\'s top-down C40 city emissions inventory, using a bottom-up estimation framework that reached ~86% agreement on electricity use.',
+        'Revealed a sharp urban–rural divide in access to cooling and transportation; for example, 45.5% of urban households own a refrigerator vs. 12.4% of rural households.',
+        'Translated household electricity spending into World Bank energy-access tiers and greenhouse gas estimates, and estimated monthly fuel use for car and motorcycle owners, checked against national fuel data.',
+        'Broke 2030 and 2050 emissions forecasts down by driver (appliance ownership, electricity use, transportation), delivering a master data sheet used by policymakers in Accra.',
+        'Built a city profile of Accra (population, GDP, workforce, land use) from census, UN, and World Bank data, and filled data gaps on trotros, taxis, and EV adoption through a literature review.',
+        'Presented weekly charts built in Python, and created a standardized Excel template so the study can be repeated in other developing countries.'
+      ],
+      skills: ['Python', 'pandas', 'NumPy', 'Survey Data Analysis', 'Emissions Modeling', 'Data Visualization', 'Excel']
     },
     {
-      title:     'Another Design Project',
-      tag:       '...',
-      img:       '',
-      body:      'fish are working on this...',
-      link:      '',
-      linkLabel: 'view on behance'
+      group:  'research',
+      title:  'Office of Sustainability Research Fellow',
+      tag:    'Princeton University · Oct 2025 – Present · Hybrid',
+      icon:   'images/linkedin/sustainability.jpg',
+      body:   `Running a campus-wide light pollution study with Princeton's lead
+campus electrician.
+
+We're measuring overlighting, energy savings, and safety concerns from
+adaptive lighting changes, to help redesign campus lighting so it's
+both safe and sustainable.`,
+      bullets: [
+        'Co-led "Improving Outdoor Lighting Through Retrofitting Kits for Existing Fixtures" with Raquel Rodriguez (GEO \'28).',
+        'Cleaned and retrofitted existing campus light fixtures instead of replacing them, keeping working parts in use.',
+        'Measured each fixture with a spectrometer and found that adding layers of filter film lowered both color temperature and brightness (foot-candles).',
+        'Mapped the first installation site: the pathway between Elm Drive and Faculty Road.',
+        'Presented the project on campus and at the LEDucation Trade Show & Conference in New York City (April 2026).'
+      ],
+      skills: ['Light Pollution', 'Field Measurement', 'Spectrometry', 'Hardware Retrofits', 'Sustainability'],
+      gallery: [
+        { src: 'images/linkedin/sustainability-1.jpg', caption: 'At the LEDucation Trade Show & Conference, NYC (April 2026)' },
+        { src: 'images/linkedin/sustainability-2.jpg', caption: 'Presenting "Reducing Light Pollution on Campus"' },
+        { src: 'images/linkedin/sustainability-7.jpg', caption: 'Walking through our retrofit-kit poster' },
+        { src: 'images/linkedin/sustainability-3.jpg', caption: 'With the team at LEDucation' },
+        { src: 'images/linkedin/sustainability-8.jpg', focus: '30%', caption: 'Repairing a campus light fixture on site' },
+        { src: 'images/linkedin/sustainability-9.jpg', focus: '60%', caption: 'Building a retrofitted light fixture' },
+        { src: 'images/linkedin/sustainability-4.jpg', caption: 'Cleaning old fixtures before the retrofit' },
+        { src: 'images/linkedin/sustainability-6.jpg', caption: 'Working through a retrofit kit\'s wiring' },
+        { src: 'images/linkedin/sustainability-5.jpg', caption: 'Measuring a retrofitted fixture with a spectrometer' }
+      ]
+    },
+
+    /* ─── industry ─── */
+    {
+      group:  'industry',
+      title:  'R&D Engineer Intern',
+      tag:    'Universal Display Corporation · Jun 2025 – Aug 2025 · Ewing, NJ',
+      icon:   'images/sem.JPG',
+      body:   `This work was under an NDA, so I can't share photos of the actual
+devices or data. The pictures below show the lab and equipment only.`,
+      gallery: [
+        { src: 'images/meAtUDC.JPG', caption: 'Suited up in the clean room' },
+        { src: 'images/sem.JPG',     caption: 'The SEM I used to image nanocubes' },
+        { src: 'images/linkedin/hot-plate.jpg', caption: 'Thermocouple-equipped hot plate wired to a 4-channel temperature meter' },
+        { video: 'images/linkedin/udc-thermocouple.mp4', poster: 'images/linkedin/udc-thermocouple-poster.jpg', caption: 'Wiring thermocouples in the lab' }
+      ],
+      bullets: [
+        'Optimized and fabricated plasmonic PHOLED devices, improving External Quantum Efficiency (EQE) by 300% across efficiency, color point, and lifetime.',
+        'Fabricated devices in a Class 10,000 clean room: glove box, fume hood, vacuum thermal evaporator, SEM, POM, and spin coater.',
+        'Engineered nanostructured particles (nanocubes) for device testing and analyzed power/performance tradeoffs at the nanoscale.',
+        'Built thermocouple-equipped hot plates for thermal uniformity testing, crystallizing rubrene thin films with ~1 mm grains.',
+        'Measured PLQY vs. crystallization area to inform OLED/PHOLED architecture tradeoffs.',
+        'Wrote Python scripts to plot device metrics, emission spectra, CIExy chromaticity, and resonance spectra; optimized spectral overlap to 95%+ at the target color point.',
+        'Gave weekly technical updates and a final presentation to PhD scientists and executive leadership; results were featured in an executive report to international partners.'
+      ],
+      skills:   ['Python', 'Clean Room', 'SEM', 'Thin Films', 'OLED']
+    },
+    {
+      group:  'industry',
+      title:  'Software Engineer Intern',
+      tag:    'EternalMemo · Jan 2025 – Feb 2025 · Remote',
+      icon:   'images/linkedin/eternalmemo.jpg',
+      bullets: [
+        'Developed an AI app with speech recognition and guided prompts for archiving personal stories.',
+        'Built a predictive Alzheimer\'s detection model using the DementiaBank and ADReSS datasets.',
+        'Fine-tuned Whisper to cut Word Error Rate by 15%, improving acoustic and linguistic feature extraction (pauses, pitch, semantic coherence).'
+      ],
+      skills: ['Python', 'Pandas', 'Whisper', 'Speech AI', 'Software Design']
+    },
+
+    /* ─── leadership & clubs ─── */
+    {
+      group:  'leadership & clubs',
+      title:  'House Manager · Princeton Charter Club',
+      tag:    'Princeton Charter Club (Eating Club) · Nov 2026 – Present',
+      icon:   'images/linkedin/charter.jpg',
+      body:   `As an officer and live-in house manager, I keep the clubhouse running
+for its members: scheduling and leading the crews that set up and clean
+up for events, looking after the building and everything in it, and
+being the link between members, officers, and club staff.`,
+      bullets: [
+        'Build the duty, setup, and cleanup calendar and assign members to shifts.',
+        'Lead every setup and cleanup shift, including a safety walkthrough before moving heavy furniture.',
+        'Track and troubleshoot all clubhouse equipment, hardware, software, and game systems.',
+        'Handle purchasing and any issues with the physical clubhouse, coordinating repairs with the club manager and staff.',
+        'Host fireplace trainings and help members start fires.',
+        'Serve on the officer corps: weekly officer meetings, planning and setting up club events, and officer duty at nighttime events.'
+      ],
+      skills: ['Leadership', 'Operations', 'Scheduling', 'Facilities Management', 'Team Coordination', 'Event Planning']
+    },
+    {
+      group:  'leadership & clubs',
+      title:  'Perfect Pairs · Events Chair',
+      tag:    'Volunteer program with Brandywine senior living residents',
+      icon:   'images/linkedin/perfect-pairs.jpg',
+      body:   `Perfect Pairs matches student volunteers one-on-one with residents
+of Brandywine for creative, hands-on activities.`,
+      events: [
+        {
+          title: 'October 2026 · Pumpkin Painting',
+          body:  'Each volunteer was paired with a Brandywine resident, and the two painted one pumpkin together as a collaborative piece.',
+          photos: [
+            { src: 'images/linkedin/perfect-pairs-pumpkins-1.jpg' },
+            { src: 'images/linkedin/perfect-pairs-pumpkins-2.jpg' },
+            { src: 'images/linkedin/perfect-pairs-pumpkins-3.jpg' }
+          ]
+        },
+        {
+          title: 'November 2026 · Collective Collage',
+          body:  'Residents and Princeton students tore paper and built one big shared collage together, then signed it as a group.',
+          photos: [
+            { src: 'images/linkedin/perfect-pairs-collage-4.jpg', wide: true, caption: 'The finished collage with everyone who made it' },
+            { src: 'images/linkedin/perfect-pairs-collage-1.jpg' },
+            { src: 'images/linkedin/perfect-pairs-collage-2.jpg' },
+            { src: 'images/linkedin/perfect-pairs-collage-3.jpg' }
+          ]
+        }
+        // next event: copy one { title, body, photos } block above
+      ]
+    },
+    {
+      group:  'leadership & clubs',
+      title:  'Astronomy Club Officer',
+      tag:    'Princeton Astronomy Club · Sep 2024 – May 2025',
+      icon:   'images/linkedin/astronomy.jpg',
+      body:   `Princeton's one and only student-run astronomy club. We host talks
+with astronomy professors and grad students, trivia nights, telescope
+certification, star parties, and space-themed study breaks.
+
+As an officer, I kept the club's ~100 members in the loop and
+brought new stargazers out to the telescopes.`,
+      bullets: [
+        'Organized monthly star party events on campus.',
+        'Placed food orders for club events.',
+        'Promoted events to the club\'s 100 members.'
+      ],
+      skills: ['Event Planning', 'Social Media', 'Outreach', 'Astronomy'],
+      gallery: [
+        { src: 'images/linkedin/astronomy-4.jpg', caption: 'Telescope night on campus' },
+        { src: 'images/linkedin/astronomy-1.jpg', caption: 'Stargazing with the club' },
+        { src: 'images/linkedin/astronomy-6.jpg', caption: 'Lining up a view through the telescope' },
+        { src: 'images/linkedin/astronomy-3.jpg', caption: 'With fellow officers at our club fair table' },
+        { src: 'images/linkedin/astronomy-2.jpg', caption: 'Talking telescopes at the club fair' },
+        { src: 'images/linkedin/astronomy-5.jpg', caption: 'Club dinner' }
+      ]
+    },
+    {
+      group:  'leadership & clubs',
+      title:  'New Jersey State Delegate',
+      tag:    'DarkSky International · Jan 2021 – Present',
+      icon:   'images/linkedin/darksky.jpg',
+      body:   `New Jersey's lead contact for dark-sky education, responsible
+outdoor lighting, and light-pollution questions.`,
+      bullets: [
+        'Wrote a county measure, passed April 15, 2023, declaring International Dark Sky Week in Atlantic County, NJ.',
+        'Won DarkSky International\'s 2023 Rising Star Award for leadership in reducing light pollution.',
+        'Featured in NightScapes (2023) for advocacy and outreach across New Jersey.',
+        'Co-hosted the Light Pollution News podcast, covering new research, policy updates, and news.'
+      ],
+      skills: ['Advocacy', 'Policy', 'Public Speaking', 'Podcasting'],
+      gallery: [
+        { src: 'images/linkedin/darksky-proclamation.jpg', wide: true,
+          caption: 'Accepting the International Dark Sky Week resolution from the Atlantic County Board of County Commissioners, April 2023' }
+      ],
+      links: [
+        { label: 'NightScapes feature (Jun 2023)',   url: 'https://darksky.org/app/uploads/2023/07/Nightscape-112-Jun-2023.pdf' },
+        { label: 'Podcast: Mar 2023: Like a Sun!',   url: 'https://podcastdetails.com/episode?title=mar_2023_like_a_sun&podcast=https://rss.buzzsprout.com/2060238.rss' },
+        { label: 'Podcast: The Lumens are Calling.', url: 'https://lightpollutionnews.com/podcast/the-lumens-are-calling/' },
+        { label: 'Podcast: VIP Session Under the Bridge', url: 'https://lightpollutionnews.com/podcast/vip-session-under-the-bridge/' }
+      ]
+    },
+    {
+      group:  'leadership & clubs',
+      title:  'Tinker Team Member',
+      tag:    'Princeton University Robotics Club · Sep 2024 – Present',
+      icon:   'images/linkedin/pc-build-1.jpg',
+      bullets: [
+        'Repaired and built computing hardware: a custom PC, an iMac, an iPhone, an iPod, and a custom keyboard.',
+        'Developed hardware and software for embedded systems.'
+      ],
+      skills: ['Raspberry Pi', 'Arduino', 'Hardware Repair', 'Embedded Systems'],
+      body:   `The builds have their own write-ups under Projects → Design Projects.`
+    },
+
+    /* ─── early work ─── */
+    {
+      group:  'early work',
+      title:  'High School Physics Research Student',
+      tag:    'Saint Joseph\'s University · Jun 2022 – Jul 2022',
+      icon:   'images/linkedin/sju-physics.jpg',
+      body:   `Researched the Timoshenko oscillator for the 2023 International Young
+Physicists' Tournament (IYPT) in an SJU physics lab.
+
+Used photogate setups, Vernier Graphical Analysis, MATLAB, and Excel to
+study oscillatory motion, then worked with three teammates and a mentor
+to analyze the data and present it at the international tournament.`,
+      skills: ['MATLAB', 'Excel', 'Experimental Physics'],
+      preview: {
+        url:   'https://www.sju.edu/departments/physics/events/high-school-physics-camp',
+        site:  'sju.edu',
+        title: 'High School Physics Research Camp | Saint Joseph\'s University',
+        desc:  'A free, week-long summer program where high school students do original research in a university physics lab and present their findings.',
+        img:   'images/linkedin/sju-physics-group.jpg'   // shown as the preview image
+      },
+      gallery: [
+        { src: 'images/linkedin/sju-physics-group.jpg', wide: true, caption: 'Certificate day with the 2022 SJU physics research camp' }
+      ]
+    },
+    {
+      group:  'early work',
+      title:  'Web Developer',
+      tag:    'Kode With Klossy · Jul 2022',
+      icon:   'images/linkedin/kwk.jpg',
+      body:   `Built notTooSweet.com, my first website, during the Kode With Klossy
+summer program. It's where I first learned HTML and CSS.`,
+      skills: ['HTML', 'CSS']
     },
   ];
 
-  function renderDesignList() {
-    const list = document.getElementById('designList'); list.innerHTML = '';
-    if (!DESIGN_PROJECTS.length) { list.innerHTML='<p style="font-size:clamp(7px,1vw,10px);opacity:.7;color:#fff8f4;">no projects yet!</p>'; return; }
-    DESIGN_PROJECTS.forEach((proj, i) => {
-      const card=document.createElement('div'); card.className='design-card'; card.onclick=()=>openDesignDetail(i);
-      const text=document.createElement('div'); text.className='design-card-text';
-      text.innerHTML=`<div class="design-card-title">${proj.title}</div><div class="design-card-tag">${proj.tag}</div>`;
-      let thumb;
-      if(proj.img){thumb=document.createElement('img');thumb.className='design-card-img';thumb.src=proj.img;thumb.alt=proj.title;}
-      else{thumb=document.createElement('div');thumb.className='design-card-img-placeholder';thumb.textContent='no img';}
-      card.appendChild(text);card.appendChild(thumb);list.appendChild(card);
-    });
-  }
 
-  function openDesignDetail(i) {
-    const proj=DESIGN_PROJECTS[i];
-    document.getElementById('designDetailTitle').textContent=proj.title;
-    document.getElementById('designDetailTag').textContent=proj.tag;
-    const img=document.getElementById('designDetailImg');
-    if(proj.img){img.src=proj.img;img.style.display='block';}else img.style.display='none';
-    let bHTML=proj.body.split('\n').filter(l=>l.trim()).map(l=>`<p style="margin-bottom:14px;">${l}</p>`).join('');
-    if(proj.link) bHTML+=`<a class="project-link-btn" href="${proj.link}" target="_blank" rel="noopener">${proj.linkLabel||'view project'}</a>`;
-    document.getElementById('designDetailBody').innerHTML=bHTML;
-    document.getElementById('designList').classList.add('hidden');
-    document.getElementById('designDetail').classList.add('show');
-  }
-
-  function closeDesignDetail() {
-    const d=document.getElementById('designDetail');
-    if(d.classList.contains('show')){d.classList.remove('show');document.getElementById('designList').classList.remove('hidden');}
-    else closePanel('cpDesign');
-  }
-
-  function resetDesignView() {
-    document.getElementById('designDetail').classList.remove('show');
-    document.getElementById('designList').classList.remove('hidden');
-  }
+  /* ══════════════════════════════════════════════════════════════
+     DESIGN PROJECTS  (hardware builds + physical things I made)
+     ══════════════════════════════════════════════════════════════ */
+  const DESIGN_PROJECTS = [
+    {
+      title:  'Mudkip Automatic Plant Waterer',
+      tag:    'Personal Project · micro:bit · 3D Printing',
+      icon:   'images/linkedin/mudkip.jpg',
+      skills: ['micro:bit', 'Soil Moisture Sensor', 'Embedded Programming', '3D Printing', 'Painting'],
+      body:   `A self-watering planter where a 3D-printed Mudkip holds the plant pot
+and hides the electronics, and it waters the plant on its own.`,
+      sections: [
+        { heading: 'How I Built It',
+          bullets: [
+            'Wired a soil moisture sensor in the pot to a micro:bit and programmed it to check the reading against a threshold every 4 hours.',
+            'Dry soil triggers a watering, and soil that is already moist enough skips that round.',
+            '3D-printed, sanded, and hand-painted the Mudkip body, head, and pot.'
+          ] }
+      ],
+      gallery: [
+        { video: 'images/linkedin/mudkip-working.mp4', poster: 'images/linkedin/mudkip-working-poster.jpg', caption: 'Watering the plant automatically' },
+        { src: 'images/linkedin/mudkip-3.jpg', focus: '45%', caption: 'Finished and painted, with its pot' },
+        { src: 'images/linkedin/mudkip-1.jpg', focus: '72%', caption: 'Head, primed and painted' },
+        { src: 'images/linkedin/mudkip-2.jpg', focus: '75%', caption: 'Body, mid-paint' }
+      ],
+      credit: 'Mudkip 3D model (STL file) by Altarabyte.'
+    },
+    {
+      title:  'Custom PC Build',
+      tag:    'Hardware · Robotics Club Tinker Team',
+      icon:   'images/linkedin/pc-build-1.jpg',
+      skills: ['PC Hardware', 'Assembly', 'Troubleshooting'],
+      body:   `Built custom PCs with the Princeton Robotics Club Tinker Team, from
+choosing and assembling the parts to two finished, working builds.`,
+      gallery: [
+        { src: 'images/linkedin/pc-build-1.jpg', caption: 'Two finished builds, side by side' },
+        { src: 'images/linkedin/pc-build-2.jpg', caption: 'Mid-build: fitting the AMD CPU cooler' }
+      ]
+    },
+    {
+      title:  'iPhone 5s Rebuild',
+      tag:    'Hardware · Robotics Club Tinker Team',
+      icon:   'images/linkedin/iphone-5s.jpg',
+      skills: ['Electronics Repair', 'Battery Replacement'],
+      body:   `Took apart an iPhone 5s with the Robotics Club Tinker Team, replaced the
+battery, and put it back together, and now it powers on and works again.`,
+      gallery: [
+        { src: 'images/linkedin/iphone-5s.jpg',      caption: 'Opened up on the workbench, with the screen off and battery exposed' },
+        { src: 'images/linkedin/iphone-5s-done.jpg', caption: 'Back together and booting with a new battery' }
+      ]
+    },
+  ];
 
 
   /* ══════════════════════════════════════════════════════════════
      CODE PROJECTS
-     ✏️ Same structure as Design Projects above.
      ══════════════════════════════════════════════════════════════ */
   const CODE_PROJECTS = [
     {
-      title:     'Code Project',
-      tag:       '...',
-      img:       '',
-      body:      'fish still blooping',
-      link:      '',
-      linkLabel: 'view on github'
+      title:  'HormoniQ: ML Tool for PCOS Diagnosis',
+      tag:    'Hackathon · HackPrinceton 2024 · Winner, Health Track · Nov 2024',
+      icon:   'images/hormoniq/icon.jpg',
+      skills: ['Python', 'Machine Learning', 'Random Forest', 'scikit-learn', 'Data Analysis', 'Healthcare Tech', 'Product Design', 'Teamwork'],
+      body:   `PCOS (polycystic ovary syndrome) often goes undiagnosed or is diagnosed
+late because its symptoms overlap with other conditions. Late diagnosis
+can lead to infertility, metabolic syndrome, and worse mental health.
+
+Our team of four built HormoniQ in one weekend at HackPrinceton, and it
+uses machine learning to flag high-risk PCOS patterns in patient data so
+providers can catch the condition earlier.`,
+      sections: [
+        { heading: 'Key Design Decisions',
+          bullets: [
+            '<b>Existing medical records.</b> Built the tool around data clinics already collect, like cycle length, symptoms, hormone levels, blood tests, weight, and BMI, so patients don\'t have to log anything new.',
+            '<b>Random Forest classifier.</b> Chose a Random Forest since it handles a mix of numeric and categorical health data and holds up well on small datasets.',
+            '<b>Confusion matrix.</b> Evaluated the model with a confusion matrix to see false positives and false negatives separately, because a missed diagnosis and a false alarm carry very different costs.',
+            '<b>Likelihood score.</b> The output is a percentage likelihood of PCOS with flags for urgent cases, and it works as a pre-diagnosis aid for providers.',
+            '<b>Business model.</b> Defined the audience (women ages 15 to 55 and their providers), a freemium model with premium reports, and a licensing path for clinics and hospitals.'
+          ] },
+        { heading: 'Outcome',
+          bullets: [
+            'Won the 2024 HackPrinceton Health Track.',
+            'Delivered a working ML pipeline that predicts PCOS likelihood from patient data.'
+          ] }
+      ],
+      gallery: [
+        { src: 'images/hormoniq/title.jpg', fit: 'contain', caption: 'Title slide: an ML-based diagnostic tool for tracking and predicting hormonal health patterns' },
+        { src: 'images/hormoniq/win.jpg',   caption: 'Announced as a winner at HackPrinceton, Fall 2024' }
+      ],
+      links: [ { label: 'View on GitHub', url: 'https://github.com/Charmination/HormoniQ' } ]
     },
     {
-      title:     'Another Code Project',
-      tag:       '...',
-      img:       '',
-      body:      'fish still blooping check back later',
-      link:      '',
-      linkLabel: 'view on github'
+      title:  'notTooSweet.com',
+      tag:    'HTML · CSS · Kode With Klossy · 2022',
+      icon:   'images/linkedin/kwk.jpg',
+      skills: ['HTML', 'CSS'],
+      body:   `My very first website, built at Kode With Klossy, and where my web
+development journey started.`
     },
   ];
 
-  function renderCodeList() {
-    const list=document.getElementById('codeList');list.innerHTML='';
-    if(!CODE_PROJECTS.length){list.innerHTML='<p style="font-size:clamp(7px,1vw,10px);opacity:.7;color:#2a0a18;">no projects yet!</p>';return;}
-    CODE_PROJECTS.forEach((proj,i)=>{
-      const card=document.createElement('div');card.className='code-card';card.onclick=()=>openCodeDetail(i);
-      const text=document.createElement('div');text.className='code-card-text';
-      text.innerHTML=`<div class="code-card-title">${proj.title}</div><div class="code-card-tag">${proj.tag}</div>`;
-      let thumb;
-      if(proj.img){thumb=document.createElement('img');thumb.className='code-card-img';thumb.src=proj.img;thumb.alt=proj.title;}
-      else{thumb=document.createElement('div');thumb.className='code-card-img-placeholder';thumb.textContent='no img';}
-      card.appendChild(text);card.appendChild(thumb);list.appendChild(card);
-    });
-  }
 
-  function openCodeDetail(i) {
-    const proj=CODE_PROJECTS[i];
-    document.getElementById('codeDetailTitle').textContent=proj.title;
-    document.getElementById('codeDetailTag').textContent=proj.tag;
-    const img=document.getElementById('codeDetailImg');
-    if(proj.img){img.src=proj.img;img.style.display='block';}else img.style.display='none';
-    let bHTML=proj.body.split('\n').filter(l=>l.trim()).map(l=>`<p style="margin-bottom:14px;">${l}</p>`).join('');
-    if(proj.link) bHTML+=`<a class="project-link-btn" href="${proj.link}" target="_blank" rel="noopener">${proj.linkLabel||'view project'}</a>`;
-    document.getElementById('codeDetailBody').innerHTML=bHTML;
-    document.getElementById('codeList').classList.add('hidden');
-    document.getElementById('codeDetail').classList.add('show');
-  }
+  /* ══════════════════════════════════════════════════════════════
+     COURSE PROJECTS  (built for a class)
+     ══════════════════════════════════════════════════════════════ */
+  const COURSE_PROJECTS = [
+    {
+      title:  'Car Lab',
+      tag:    'ECE 302 · Robotics & Autonomous Systems · Princeton University · Fall 2026',
+      icon:   'images/carlab/icon.jpg',
+      skills: ['PSoC', 'Embedded C', 'Feedback Control (PID)', 'Circuit Design', 'Soldering', 'KiCad', 'Oscilloscope', 'Sensors', 'XBee Telemetry'],
+      body:   `Over the semester, a bare RC car became an autonomous robot, with every
+board designed and soldered by hand, a PSoC microcontroller programmed
+from scratch, and feedback control tuned on a real track.
 
-  function closeCodeDetail() {
-    const d=document.getElementById('codeDetail');
-    if(d.classList.contains('show')){d.classList.remove('show');document.getElementById('codeList').classList.remove('hidden');}
-    else closePanel('cpCode');
-  }
+Each milestone ended with a formal lab report and a live demo for the
+TAs. Select a milestone below to see the details.`,
+      parts: [
 
-  function resetCodeView() {
-    document.getElementById('codeDetail').classList.remove('show');
-    document.getElementById('codeList').classList.remove('hidden');
-  }
+        /* ── Milestone 1 ── */
+        {
+          kicker:  'Milestone 1',
+          summary: 'Holding the car at 4 ft/s on flat ground, uphill, and downhill with PID speed control.',
+          title:   'Milestone 1: Speed Control',
+          tag:     'Car Lab · ECE 302 · October 2026',
+          icon:    'images/carlab/icon.jpg',
+          skills:  ['PSoC', 'PID Control', 'Embedded C', 'Hall-Effect Sensing', 'PWM Motor Control', 'Power Electronics', 'Circuit Design', 'Soldering', 'XBee'],
+          body:    `Goal: keep an RC car at exactly 4 ft/s on flat ground, up a ramp, and
+down a ramp. The motor load changes completely between the three, and
+each run had a tight timing window.`,
+          sections: [
+            { heading: 'Key Design Decisions',
+              bullets: [
+                '<b>Split power supply.</b> The motor pulls about 10 A steady and 65 A at startup, which is enough to sag a shared battery and reset the microcontroller, so the electronics got their own 9.6 V pack and the motor got its own 7.2 V pack, with the grounds tied at one point.',
+                '<b>MOSFET selection.</b> Chose the IRLB4132 because its 1.35 to 2.35 V gate threshold lets a 5 V signal turn it fully on, its 620 A pulsed and 150 A continuous ratings cover the 65 A inrush, and its 4.5 mΩ on-resistance wastes only about 0.45 W at 10 A, and a flyback diode absorbs the motor\'s voltage spikes.',
+                '<b>Timer choice.</b> A 16-bit timer at 1 MHz rolls over every 65.5 ms and would corrupt speed readings below about 2 ft/s during startup, so the design uses a 32-bit timer that rolls over only every 71 minutes.',
+                '<b>Controller design.</b> Measured the open-loop throttle that holds 4 ft/s on flat ground (u₀ = 350) and used it as a feedforward baseline, so the PID terms only correct the difference, and capped the integral term at 200 counts to prevent windup.',
+                '<b>Tuning.</b> Estimated starting gains by hand (Kp ≈ 45, Ki ≈ 65) and then tuned them on the track to Kp = 65 and Ki = 85, plus a small Kd = 0.5 to narrow the gap between uphill and downhill times.',
+                '<b>Live tuning.</b> Set up an XBee radio link to change gains and stream speed data from a laptop without reflashing the board.'
+              ] },
+            { heading: 'Outcome',
+              bullets: [
+                'Hit all three timing windows with 10.2 s on the 40 ft flat (target 9.8 to 10.2 s), 9.5 s uphill, and 8.3 s downhill (target 8.1 to 9.9 s), and TA-verified times of 9.8, 9.6, and 8.6 s.',
+                'Settled to 4.01 ± 0.07 ft/s on flat ground within about 3.5 s.',
+                'The controller adjusted the throttle on its own, running about 33% on flat ground, 42% uphill, and 12% downhill.',
+                'Verified every subsystem with 10 documented bench tests before putting it all together.'
+              ] }
+          ],
+          gallery: [
+            { video: 'images/carlab/flat.mp4',     poster: 'images/carlab/flat-poster.jpg',     caption: 'Flat ground: 10.2 s' },
+            { video: 'images/carlab/uphill.mp4',   poster: 'images/carlab/uphill-poster.jpg',   caption: 'Up the ramp: 9.5 s' },
+            { video: 'images/carlab/downhill.mp4', poster: 'images/carlab/downhill-poster.jpg', caption: 'Down the ramp: 8.3 s' },
+            { src: 'images/carlab/block-diagram.png', fit: 'contain', caption: 'System block diagram: power, regulator, motor drive, Hall-effect sensing, and the PSoC feedback loop' },
+            { src: 'images/carlab/speed-uphill.png',  fit: 'contain', caption: 'Logged uphill run: the integral term raises the throttle on the slope and brings the speed back to 4 ft/s' }
+          ]
+        },
+
+        /* ── Milestone 2 ── */
+        {
+          kicker:  'Milestone 2',
+          summary: 'Following a black tape track with a camera, and finishing two laps in 54.84 s (target: under 60 s).',
+          title:   'Milestone 2: Autonomous Line Following',
+          tag:     'Car Lab · ECE 302 · November 2026',
+          icon:    'images/carlab/m2-icon.jpg',
+          skills:  ['Autonomous Navigation', 'PSoC', 'Embedded C', 'PD / PI Control', 'Video Signal Processing', 'LM1881', 'Signal Integrity', 'Circuit Design', 'Soldering', 'Oscilloscope', 'XBee Telemetry'],
+          body:    `Goal: make the car drive itself around a winding tape track using only
+a camera, with the Milestone 1 speed controller still running, and finish
+two laps in under 60 seconds.`,
+          sections: [
+            { heading: 'Key Design Decisions',
+              bullets: [
+                '<b>Hardware line detection.</b> Built PSoC logic (a counter and timer clocked at 24 MHz) that picks scan line 120 in the middle of the frame and times where the tape appears, which keeps detection fast and uses almost no CPU time.',
+                '<b>Measured threshold.</b> Probed the camera signal and found black at about 400 mV and white at about 700 mV, so the comparator threshold sits at 550 mV, and the calibrated center reading of 37 µs matched on both the bench and the track.',
+                '<b>Glitch filter.</b> A 3-cycle glitch filter (125 ns, just 0.2% of a 63.5 µs scan line) rejects electrical spikes and still lets the real tape edge through.',
+                '<b>PD steering.</b> Left out the integral term since it would keep turning the car after the line recentered, and tuned the gains to Kp = 25 and Kd = 25 to steer quickly and damp side-to-side wobble.',
+                '<b>Software filters.</b> Rejected sudden position jumps unless three readings in a row confirmed them, smoothed readings with an 85/15 weighted average, held the steering steady when the tape left view, and clamped the servo to 1100 to 1900 so it wouldn\'t buzz.',
+                '<b>Video board.</b> Added 75 Ω termination to prevent signal reflections, separate ground returns for camera power and video, 10 µF and 0.1 µF decoupling capacitors, and a socket for the LM1881 so it can be swapped without desoldering.',
+                '<b>Controller integration.</b> Kept the speed loop\'s state separate from steering, lowered the target speed to 3.5 ft/s for consistent laps, and capped the throttle at 390 to limit the effect of a bad sensor reading.'
+              ] },
+            { heading: 'Outcome',
+              bullets: [
+                'Finished two laps in 54.84 s (TA-timed), more than 5 seconds under the target.',
+                'Live telemetry showed steering error within ±5 µs on straights and ±20 to 25 µs in curves, and the car recovered without oscillating.',
+                'The throttle stayed between 360 and 374 and never reached its cap.'
+              ] }
+          ],
+          gallery: [
+            { video: 'images/carlab/final-demo.mp4', poster: 'images/carlab/final-demo-poster.jpg', caption: 'Final demo: following the line around the track on its own' },
+            { src: 'images/carlab/m2-regulator.png',      fit: 'contain', caption: 'Regulator board' },
+            { src: 'images/carlab/m2-motor-drive.png',    fit: 'contain', caption: 'Motor drive board' },
+            { src: 'images/carlab/m2-hall-effect.png',    fit: 'contain', caption: 'Hall-effect board' },
+            { src: 'images/carlab/m2-speed-downhill.png', fit: 'contain', caption: 'Down the ramp: speed and PWM duty cycle' },
+            { src: 'images/carlab/m2-speed-flat.png',     fit: 'contain', caption: 'Flat run (40 ft): speed and PWM duty cycle' }
+          ]
+        }
+      ]
+    },
+    {
+      title:  'Heart-Rate-Responsive Pump',
+      tag:    'ECE 203 · Final Lab · Princeton University · Spring 2026',
+      icon:   'images/hr/icon.jpg',
+      skills: ['Arduino', 'C++', 'Pulse Sensing', 'MOSFET Switching', 'Circuit Design', 'Breadboarding', '3D Printing', 'Rapid Prototyping', 'Design Iteration'],
+      body:   `Goal: build a biomedical device that senses heart rate and responds on
+its own when it gets too high. The final prototype reads pulse from an
+ear-clip sensor, and when the heart rate crosses a threshold, an Arduino
+turns on a mini pump that moves fluid from an IV-style reservoir through
+tubing.`,
+      sections: [
+        { heading: 'Key Design Decisions',
+          bullets: [
+            '<b>Pivot.</b> The project started as a non-invasive vagus nerve stimulator with gel electrodes, an AD620 instrumentation amplifier, and a transistor-switched output, but the signals were too weak and noisy and there was no safe way to test stimulation, so the sensing and output stages got redesigned.',
+            '<b>Sensor change.</b> Swapped the electrodes for an ear-clip pulse sensor that reads blood flow, which gave a stronger, cleaner signal and removed the need for high-gain amplification.',
+            '<b>MOSFET driver.</b> An Arduino pin can\'t supply enough current for the pump, so the Arduino switches a MOSFET and an external supply powers the pump.',
+            '<b>Pull-down resistor.</b> A 22 kΩ resistor holds the MOSFET gate low whenever the Arduino isn\'t driving it, so noise can\'t turn the pump on, and the value draws very little current while still pulling the gate low reliably.',
+            '<b>Safe output.</b> Replaced electrical stimulation with the pump for a visible response with no risk to the user, and added a blue LED that blinks with each detected heartbeat.',
+            '<b>Pulse timing.</b> Wrote the Arduino code to calculate BPM from the time between pulses (60,000 / milliseconds between beats) and ignore re-triggers within 200 ms, so one heartbeat never counts twice.'
+          ] },
+        { heading: 'Outcome',
+          bullets: [
+            'The prototype works as a closed loop: when BPM exceeds the threshold, the LED and pump respond in real time.',
+            '3D-printed the fluid containers for the reservoir system.'
+          ] },
+        { heading: 'What I Would Do Next',
+          bullets: [
+            'Replace the fixed threshold with one that adapts to each person\'s heart-rate trends.',
+            'Add bandpass filtering, adaptive peak detection, and heart-rate variability (HRV) analysis.',
+            'Add a pump time-out with an audible alert for medical staff, plus a display for heart rate and system status.'
+          ] }
+      ],
+      gallery: [
+        { video: 'images/hr/demo-explain.mp4', poster: 'images/hr/demo-explain-poster.jpg', caption: 'System walkthrough: ear-clip pulse sensor, Arduino, and MOSFET circuit' },
+        { video: 'images/hr/demo-pump.mp4',    poster: 'images/hr/demo-pump-poster.jpg',    caption: 'Live demo: BPM readout, heartbeat LED, and the pump responding' }
+      ]
+    },
+    {
+      title:  'Lighting Design: "For the First Time in Forever"',
+      tag:    'Course Project · Lighting Design · Princeton University',
+      icon:   'images/lighting/icon.jpg',
+      skills: ['Vectorworks', 'Blender', 'Lighting Design', 'Stage Lighting', 'Color Theory', 'Cue Design & Timing', 'Fixture Setup'],
+      body:   `Designed and set up the full lighting for a performance of "For the
+First Time in Forever" from Frozen, from mapping the design in
+Vectorworks and Blender to hanging and focusing the fixtures, choosing
+the colors, and programming cues timed to the song.`,
+      sections: [
+        { heading: 'Key Design Decisions',
+          bullets: [
+            '<b>Digital plan first.</b> Mapped the fixture positions and lighting plot in Vectorworks and previewed the looks in Blender before hanging anything.',
+            '<b>Color story.</b> The color moves from cool, dim tones to warm gold and bright pink as the song builds.',
+            '<b>Cue timing.</b> Each cue lands on a moment in the song, so the lighting moves with the performance.'
+          ] },
+        { heading: 'Outcome',
+          bullets: [
+            'Hung, focused, and ran the complete design for the performance, shown in the video below.'
+          ] }
+      ],
+      gallery: [
+        { video: 'images/lighting/frozen.mp4', poster: 'images/lighting/frozen-poster.jpg', wide: true, caption: 'Full lighting sequence (turn on sound to hear the song)' }
+      ]
+    },
+  ];
+
+
+  /* ── Hook each data array up to its panel ─────────────────────── */
+  const expSection    = makeCardSection('exp',    EXPERIENCE,      'no experience yet!');
+
+  // Projects page = course + design + code projects, each under its own badge
+  const PROJECTS = [
+    ...COURSE_PROJECTS.map(p => ({ group: 'course', ...p })),
+    ...DESIGN_PROJECTS.map(p => ({ group: 'design', ...p })),
+    ...CODE_PROJECTS.map(p   => ({ group: 'code',   ...p })),
+  ];
+  const designSection = makeCardSection('design', PROJECTS, 'no projects yet!', true);   // true = show skills subtitle
+
+  // These short names are what the HTML buttons (onclick="...") call
+  function renderExpList()    { expSection.renderList(); }
+  function resetExpView()     { expSection.reset(); }
+  function closeExpDetail()   { expSection.closeDetail('cpExp'); }
+
+  function renderDesignList()  { designSection.renderList(); }
+  function resetDesignView()   { designSection.reset(); }
+  function closeDesignDetail() { designSection.closeDetail('cpDesign'); }
+
+
 
 
   /* ══════════════════════════════════════════════════════════════
@@ -2277,8 +3169,156 @@ my first internship experience feel so memorable and exploratory.`
   /* ══════════════════════════════════════════════════════════════
      RESIZE — re-draw canvas and reposition floor objects
      ══════════════════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════════════════
+     AMBIENT SEA CREATURES — every few seconds something drifts
+     across the tank (turtle, jellyfish, a school of fish, a ray).
+     They're decoration only: pointer-events are off, so they never
+     block clicks on the real fish.
+     To add a creature: draw a sprite (same letter-grid idea as the
+        goldfish), give it colors, and add it to CRITTERS.
+     ══════════════════════════════════════════════════════════════ */
+  const CRITTERS = {
+    turtle: {
+      move: 'side', speed: [30, 42], weight: 3, size: 1.6,   // seconds to cross · how often · how big
+      colors: { k:'#2e4a3a', G:'#4f7d3a', g:'#7fae5a', h:'#9cc77a', s:'#d9c27a', w:'#ffffff' },
+      sprite: [
+        "......kkkkk.........",
+        "....kkGgGgGkk.......",
+        "...kGgGGgGGgGk...kk.",
+        "..kGGgGGgGGgGGk.khhk",
+        "..kgGGgGGgGGgGkkhwhk",
+        ".kkkkkkkkkkkkkkkhhhk",
+        "khhk.kssssssssk.kkk.",
+        "khk...kkkkkkkk......",
+        ".k..khhk....khhk....",
+        "....kkk......kkk....",
+      ]
+    },
+    jelly: {
+      move: 'up', speed: [26, 36], weight: 3, size: 1.4,
+      colors: { k:'#c77aa0', P:'#f7b6d2', L:'#ffe3ef', p:'#f2a0c4' },   // light pink
+      sprite: [
+        "...kkkkk...",
+        "..kPPPPPk..",
+        ".kPLPPPPPk.",
+        ".kPLPPPPPk.",
+        "kPPPPPPPPPk",
+        "kkPkkPkkPkk",
+        "..p..p..p..",
+        ".p..p..p...",
+        "..p..p..p..",
+        "...p..p..p.",
+        "..p..p..p..",
+      ]
+    },
+    school: {
+      move: 'side', speed: [16, 22], weight: 3, group: 8,   // 8 little fish swimming together
+      colors: { k:'#2f5f7a', s:'#7fbcd6', S:'#c8ecf7', w:'#ffffff' },
+      sprite: [
+        "k..sss..",
+        "kksSSsws",
+        "k..sss..",
+      ]
+    },
+    ray: {
+      move: 'side', speed: [24, 32], weight: 2, size: 1.4,
+      colors: { k:'#1f3f55', M:'#3d6f8f', m:'#7fb3cc' },
+      sprite: [
+        "........kk..........",
+        ".......kMMk.........",
+        "......kMMMMk........",
+        "kk...kMMMMMMk.......",
+        ".kkkkMMMMMMMMkkk....",
+        "...kMMMMmMMMMMMMkk..",
+        "..kMMMMMMMMMMmMMMMMk",
+        "...kMMMMmMMMMMMMkk..",
+        ".kkkkMMMMMMMMkkk....",
+        "kk...kMMMMMMk.......",
+        "......kMMMMk........",
+        ".......kMMk.........",
+        "........kk..........",
+      ]
+    },
+  };
+
+  // Turn a letter-grid sprite into a little <canvas>
+  function critterCanvas(def, scale, flip) {
+    const c = document.createElement('canvas');
+    c.width = def.sprite[0].length * scale; c.height = def.sprite.length * scale;
+    const ctx = c.getContext('2d');
+    def.sprite.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = def.colors[ch];
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }));
+    if (flip) c.style.transform = 'scaleX(-1)';     // sprites face right; flip to swim left
+    return c;
+  }
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  function spawnCritter() {
+    if (dark || document.hidden) return;                       // creatures rest when the light is off
+    const layer = document.getElementById('ambient');
+    if (layer.childElementCount >= 4) return;                  // keep the tank calm
+    const W = tankW(), H = tankH();
+    const top = titleBottom() + 10, bottom = H - Math.round(H * SAND_FRAC) - 20;
+
+    // pick a creature (weight = how often it shows up)
+    const names = Object.keys(CRITTERS).flatMap(n => Array(CRITTERS[n].weight).fill(n));
+    const def   = CRITTERS[names[Math.floor(Math.random() * names.length)]];
+    const scale = Math.max(2, Math.round(Math.max(2, PS - 2) * (def.size || 1)));
+    const dur   = rand(def.speed[0], def.speed[1]) * 1000;
+
+    const el = document.createElement('div');
+    el.className = 'critter';
+    let from, to;
+
+    if (def.move === 'up') {                                   // jellyfish: drift upward with a pulse
+      const pulse = document.createElement('div'); pulse.className = 'pulse';
+      pulse.appendChild(critterCanvas(def, scale, false));
+      el.appendChild(pulse);
+      const x = rand(W * .1, W * .85);
+      from = `translate(${x}px, ${bottom + 40}px)`;
+      to   = `translate(${x + rand(-60, 60)}px, ${top - 120}px)`;
+    } else {                                                   // swimmers: cross left↔right
+      const goRight = Math.random() < .5;
+      const count = def.group || 1;
+      for (let i = 0; i < count; i++) {
+        const fish = document.createElement('div'); fish.className = 'bob';
+        fish.style.cssText = `position:absolute; left:${(i % 4) * 9 * scale + rand(0, 4) * scale}px;
+                              top:${Math.floor(i / 4) * 6 * scale + rand(0, 3) * scale}px;
+                              animation-delay:-${rand(0, 2.6)}s`;
+        fish.appendChild(critterCanvas(def, scale, !goRight));
+        el.appendChild(fish);
+      }
+      const y = rand(top, Math.max(top + 1, bottom - def.sprite.length * scale * 2));
+      const off = 200;
+      from = `translate(${goRight ? -off : W + off}px, ${y}px)`;
+      to   = `translate(${goRight ? W + off : -off}px, ${y + rand(-30, 30)}px)`;
+    }
+
+    layer.appendChild(el);
+    el.animate([{ transform: from }, { transform: to }], { duration: dur, easing: 'linear' })
+      .onfinish = () => el.remove();
+  }
+
+  // a first visitor shortly after load, then one every ~6–12 seconds
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setTimeout(spawnCritter, 1500);
+    (function nextCritter() {
+      setTimeout(() => { spawnCritter(); nextCritter(); }, rand(6000, 12000));
+    })();
+  }
+
+
   window.addEventListener('resize', () => {
     setTimeout(() => {
+      // re-size every pixel-art piece for the new screen width
+      setPixelScales();
+      drawLamp();
+      drawAllFish();
+      fishDefs.forEach(f => { f.w = GF_W * PS; f.h = GF_H * PS; });
       initCanvas();
       placeFloor(tankW(), tankH(), Math.round(tankH() * SAND_FRAC));
     }, 100);
