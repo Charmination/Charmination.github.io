@@ -108,6 +108,12 @@
     @keyframes jellyPulse { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.86); } }
     @media (prefers-reduced-motion: reduce) { .ambient { display: none; } }
 
+    /* Catfish + snails: pure decoration, so clicks pass straight through them */
+    .deco-layer  { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+    .snail-layer { z-index: 6; }                            /* in front of the sand, behind the chest/clam */
+    .deco-layer canvas { position: absolute; top: 0; left: 0; image-rendering: pixelated; will-change: transform; }
+    .tank-wrap.dark-mode .deco-layer { filter: brightness(.55) saturate(.7); }
+
     /* Title banner at the top of the tank */
     .tank-title-bar {
       position: relative; z-index: 10; text-align: center;
@@ -1098,6 +1104,10 @@
     <!-- Sea creatures that drift through now and then (not clickable) -->
     <div class="ambient" id="ambient"></div>
 
+    <!-- Catfish cruising along the back of the tank, and snails crawling on the sand (decoration only) -->
+    <div class="deco-layer" id="catfishLayer"></div>
+    <div class="deco-layer snail-layer" id="snailLayer"></div>
+
     <!-- Tank title banner -->
     <div class="tank-title-bar" id="titleBar">
       <span>Bonnie Peng's Aquarium</span>
@@ -1148,7 +1158,7 @@
          ───────────────────────────────────────────── -->
 
     <!-- Treasure chest (right side of tank) — opens photo gallery -->
-    <button class="floor-obj" id="chestBtn" data-label="Treasure Chest" aria-label="Open treasure chest"></button>
+    <button class="floor-obj" id="chestBtn" data-label="Bonnie's Treasures" aria-label="Open treasure chest"></button>
 
     <!-- Giant clam (left side of tank) — opens pearl of wisdom -->
     <button class="floor-obj" id="clamBtn" data-label="Contact Clam" aria-label="Open clam"></button>
@@ -1246,7 +1256,7 @@
     <!-- ── TREASURE CHEST — grid of clickable boxes, each a different feature ── -->
     <div class="overlay-panel" id="galleryPanel">
       <div class="cp-header">
-        <span class="cp-title">Treasure Chest</span>
+        <span class="cp-title">Bonnie's Treasures</span>
         <button class="cp-close" id="galClose">X</button>
       </div>
       <div class="cp-body">
@@ -1267,16 +1277,16 @@
     <!-- ── FEEDBACK OVERLAY — message-in-a-bottle form ── -->
     <div class="overlay-base" id="feedbackOverlay">
       <button class="ov-close" id="fbClose">X</button>
-      <div class="ov-title">message in a bottle</div>
+      <div class="ov-title">Message in a Bottle</div>
       <div class="ov-sub">Send feedback to feed the fish.</div>
 
       <!-- Formspree form — replace the action URL with your own Formspree endpoint -->
       <form id="feedbackForm" action="https://formspree.io/f/mbdeeaza" method="POST">
         <label class="ov-label" for="fbEmail">Email</label>
-        <input  class="ov-input" type="email" id="fbEmail" name="email" placeholder="your@email.com">
+        <input  class="ov-input" type="email" id="fbEmail" name="email" placeholder="you@email.com">
 
         <label class="ov-label" for="fbMsg">Message</label>
-        <textarea class="ov-textarea" id="fbMsg" name="message" placeholder="say something nice :)"></textarea>
+        <textarea class="ov-textarea" id="fbMsg" name="message" placeholder="Say something nice!"></textarea>
 
         <button class="ov-btn" type="submit">SEND IT ✦</button>
         <div class="fb-status" id="fbStatus" aria-live="polite"></div>
@@ -1301,7 +1311,7 @@
         </a>
         <!-- Opens the message-in-a-bottle form (sends straight to Bonnie's inbox) -->
         <button class="pearl-link pearl-link-bottle" id="pearlBottleBtn">
-          send me a message <span class="pearl-link-sub">via the message in a bottle</span>
+          Send Me a Message <span class="pearl-link-sub">via the Message in a Bottle</span>
         </button>
       </div>
     </div>
@@ -1338,7 +1348,7 @@
   <div class="bottom-bar">
     <button class="feed-btn" id="feedBtn">FEED</button>
     <div class="tank-hint" id="tankHint" hidden>
-      <span class="hint-awake">Fish = navigate · Bottle = leave a message · Chest = gallery · Clam = contact</span>
+      <span class="hint-awake">Fish = navigate · Bottle = leave a message · Chest = Bonnie's Treasures · Clam = contact</span>
       <span class="hint-sleep">Lights off. The fish are resting but still clickable.</span>
     </div>
   </div>
@@ -3876,6 +3886,134 @@ the colors, and programming cues timed to the song.`,
   }
 
 
+
+  /* ══════════════════════════════════════════════════════════════
+     SNAILS + CATFISH — background decoration, not clickable
+     · Snails slowly crawl back and forth across the sand.
+     · A big catfish cruises along the bottom of the tank and turns
+       around at the walls.
+     Sprites use the same letter-grid idea as the fish:
+     each letter is one pixel, '.' is see-through.
+     ══════════════════════════════════════════════════════════════ */
+  const SNAIL_SPRITE = [          // faces right (eye stalk on the right)
+    "....kkkk.....",
+    "..kkSSssk..k.",
+    ".kSSsssSSk.b.",
+    ".kSsSSSsSkbb.",
+    ".kSsSkSsSkbbk",
+    ".kSSsSSsSkbbk",
+    "bbkkkkkkkkbbk",
+    "kbbbbbbbbbbbk",
+    ".kkkkkkkkkkk.",
+  ];
+  const CATFISH_SPRITE = [        // faces right, whiskers hanging off the face
+    "......kkkk................",
+    ".....kDDDk................",
+    "kk.kkkkDDDkkkkkkkkkk......",
+    "kDkDDDDDDDDDDDDDDDDDkk....",
+    ".kDDdDDdDDDDDdDDDdDDDDkk..",
+    "kDkLLLLLLLLLLLLLLLLLLLDwk.",
+    "kk.kLLLLLLLLLLLLLLLLLLLLkk",
+    "....kkkkkkkkkkkkkkkkkkkkWW",
+    "........kk.......kk...W..W",
+    "......................W...",
+  ];
+  const CATFISH_COLORS = { k:'#2a221c', D:'#6e5f4c', d:'#4a3e31', L:'#c9b896', w:'#fff6d8', W:'#efe2b8' };
+
+  // Each snail: shell colors, the stretch of sand it patrols (fractions of tank width),
+  // how far down the sand it sits, and its speed (sprite pixels per second).
+  const SNAILS = [
+    { S:'#c9772f', s:'#f2b35c', from: .16, to: .40, y: .58, speed: 2.2 },
+    { S:'#9a3f98', s:'#e7a3e4', from: .56, to: .84, y: .86, speed: 1.6 },
+  ];
+
+  // Paint a letter-grid sprite onto a fresh canvas
+  function spriteCanvas(rows, colors, scale) {
+    const c = document.createElement('canvas');
+    c.width = rows[0].length * scale; c.height = rows.length * scale;
+    const ctx = c.getContext('2d');
+    rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = colors[ch]; ctx.fillRect(x * scale, y * scale, scale, scale);
+    }));
+    return c;
+  }
+
+  const deco = { snails: [], catfish: null, last: 0 };
+
+  // (Re)build the snails and catfish for the current screen size
+  function setupDeco() {
+    const W = tankW(), H = tankH();
+    const sandH = Math.round(H * SAND_FRAC), sandTop = H - sandH;
+
+    // snails
+    const snailLayer = document.getElementById('snailLayer');
+    snailLayer.innerHTML = '';
+    const ss = Math.max(2, PS - 1);
+    deco.snails = SNAILS.map((sn, i) => {
+      const cv = spriteCanvas(SNAIL_SPRITE, { k:'#4a2f1f', S: sn.S, s: sn.s, b:'#d8ccb0' }, ss);
+      snailLayer.appendChild(cv);
+      const old = deco.snailsOld && deco.snailsOld[i];
+      return {
+        cv, minX: W * sn.from, maxX: W * sn.to - cv.width,
+        y: Math.round(sandTop + sandH * sn.y - cv.height),
+        x: old ? old.frac * W : W * (sn.from + sn.to) / 2,
+        dir: old ? old.dir : (i % 2 ? -1 : 1),
+        speed: sn.speed * ss,                              // pixels per second
+      };
+    });
+
+    // catfish
+    const catLayer = document.getElementById('catfishLayer');
+    catLayer.innerHTML = '';
+    const cs = Math.max(3, PS);
+    const cv = spriteCanvas(CATFISH_SPRITE, CATFISH_COLORS, cs);
+    catLayer.appendChild(cv);
+    const prev = deco.catfish;
+    deco.catfish = {
+      cv, maxX: W - cv.width - 10,
+      baseY: sandTop - cv.height - cs * 10,                // cruising low, just above the seagrass tips
+      x: prev ? Math.min(prev.x, W - cv.width - 10) : W * .25,
+      dir: prev ? prev.dir : 1, t: prev ? prev.t : 0,
+      speed: Math.max(18, W / 45),                          // crosses the tank in ~45s
+      pause: 0,
+    };
+  }
+
+  // One animation step for every snail and the catfish
+  function decoLoop(now) {
+    const dt = deco.last ? Math.min(.05, (now - deco.last) / 1000) : 0;
+    deco.last = now;
+
+    deco.snails.forEach(sn => {
+      sn.x += sn.dir * sn.speed * dt;
+      if (sn.x < sn.minX) { sn.x = sn.minX; sn.dir = 1; }  // turn around at the ends
+      if (sn.x > sn.maxX) { sn.x = sn.maxX; sn.dir = -1; }
+      const inch = Math.round(Math.sin(now / 300) * .5);    // tiny inch-worm wiggle
+      sn.cv.style.transform = `translate(${Math.round(sn.x) + inch}px, ${sn.y}px) scaleX(${sn.dir})`;
+    });
+
+    const cf = deco.catfish;
+    if (cf) {
+      if (cf.pause > 0) cf.pause -= dt;                     // rests a moment after turning
+      else {
+        cf.x += cf.dir * cf.speed * dt;
+        if (cf.x < 10)      { cf.x = 10;      cf.dir = 1;  cf.pause = 1.5; }
+        if (cf.x > cf.maxX) { cf.x = cf.maxX; cf.dir = -1; cf.pause = 1.5; }
+      }
+      cf.t += dt;
+      const y = cf.baseY + Math.sin(cf.t * 1.2) * 4;        // slow up-and-down drift
+      cf.cv.style.transform = `translate(${Math.round(cf.x)}px, ${Math.round(y)}px) scaleX(${cf.dir})`;
+    }
+    if (!deco.still) requestAnimationFrame(decoLoop);     // keep going (unless reduced motion)
+  }
+
+  setTimeout(() => {
+    setupDeco();
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(decoLoop);
+    else { deco.still = true; decoLoop(0); }                // reduced motion: draw once, stay still
+  }, 150);
+
   window.addEventListener('resize', () => {
     setTimeout(() => {
       // re-size every pixel-art piece for the new screen width
@@ -3887,6 +4025,9 @@ the colors, and programming cues timed to the song.`,
       if (document.getElementById('shoreScene').classList.contains('show')) drawShore();
       initCanvas();
       placeFloor(tankW(), tankH(), Math.round(tankH() * SAND_FRAC));
+      // remember where the snails were (as a fraction of the width), then rebuild them
+      deco.snailsOld = deco.snails.map(sn => ({ frac: sn.x / tankW(), dir: sn.dir }));
+      setupDeco();
     }, 100);
   });
 
