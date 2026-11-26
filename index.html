@@ -336,6 +336,8 @@
     .submarine:hover  { filter: brightness(1.2) drop-shadow(0 0 8px rgba(255,255,255,.9)); }
     .submarine:hover .fish-label { opacity: 1; }
     .tank-wrap.dark-mode .submarine { filter: brightness(.55) saturate(.6); }
+    .submarine.arrived { z-index: 8; animation: subArrive 1.1s ease-in-out 3; }
+    @keyframes subArrive { 0%,100% { filter: drop-shadow(0 0 0 rgba(255,255,255,0)); } 50% { filter: drop-shadow(0 0 12px rgba(255,255,255,.95)); } }
 
     /* ── The Shore scene ── */
     .shore-scene {
@@ -346,7 +348,16 @@
     }
     .shore-scene.show { transform: translateY(0); visibility: visible; }
     #shoreCanvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
-    .shore-sub { position: absolute; z-index: 2; animation: subBob 2.4s ease-in-out infinite; }
+    .shore-sub { position: absolute; z-index: 2; cursor: pointer; animation: subBob 2.4s ease-in-out infinite; }
+    .shore-sub:hover { filter: brightness(1.15) drop-shadow(0 0 8px rgba(255,255,255,.9)); }
+    .shore-sub .fish-label { opacity: 1; }                 /* always show "Dive back down" */
+
+    /* seagulls flying across the shore sky */
+    .gull-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    .gull-flock { position: absolute; top: 0; left: 0; }
+    .gull { position: absolute; }
+    .gull canvas { display: block; image-rendering: pixelated; animation: flap .5s steps(2) infinite; transform-origin: 50% 70%; }
+    @keyframes flap { 0% { transform: scaleY(1); } 100% { transform: scaleY(-.55); } }
     .shore-sub canvas { display: block; image-rendering: pixelated; }
     @keyframes subBob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-6px) rotate(1.5deg); } }
     .shore-title {
@@ -354,15 +365,7 @@
       font-family: 'Press Start 2P', monospace; font-size: clamp(12px, 2vw, 22px);
       color: #1d4f91; letter-spacing: 3px; text-shadow: 0 2px 0 rgba(255,255,255,.7); white-space: nowrap;
     }
-    .shore-back {
-      position: absolute; right: 18px; bottom: 18px; z-index: 3;
-      font-family: 'Press Start 2P', monospace; font-size: clamp(8px, 1vw, 11px);
-      color: #fff; background: #1d4f91; border: 3px solid #0d2a52; border-radius: 8px;
-      padding: 10px 14px; box-shadow: 0 4px 0 #0d2a52; cursor: pointer;
-    }
-    .shore-back:hover  { background: #2a64b3; }
-    .shore-back:active { transform: translateY(3px); box-shadow: 0 1px 0 #0d2a52; }
-    @media (prefers-reduced-motion: reduce) { .shore-scene { transition: none; } .shore-sub { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .shore-scene { transition: none; } .shore-sub, .gull canvas { animation: none; } .gull-layer { display: none; } }
 
     /* Small photo gallery under the About Me text */
     .about-gallery {
@@ -1280,9 +1283,12 @@
          ═══════════════════════════════════════════════════════ -->
     <div class="shore-scene" id="shoreScene" aria-hidden="true">
       <canvas id="shoreCanvas"></canvas>
-      <div class="shore-sub" id="shoreSub"><canvas id="shoreSubCanvas"></canvas></div>
+      <div class="gull-layer" id="gullLayer"></div>
+      <div class="shore-sub" id="shoreSub" role="button" aria-label="Dive back down">
+        <span class="fish-label">Dive back down</span>
+        <canvas id="shoreSubCanvas"></canvas>
+      </div>
       <div class="shore-title">The Shore</div>
-      <button class="shore-back" id="shoreBack">Dive back down</button>
     </div>
 
   </div><!-- /tank-wrap -->
@@ -2122,14 +2128,17 @@
     "........kyyyyk..............",
     "........kyyyyk..............",
     "........kyyyyk..............",
-    ".....kkkkkkkkkkkk...........",
-    "...kkyyyyyyyyyyyykk..k....p.",
-    ".kkykkyyykkyyykkyyykkkkkk.p.",
+    "......kkkyyyykkk............",
+    "....kkhhhhhhhhhhkk..........",
+    "..kkyyyyyyyyyyyyyykk.k....p.",
+    ".kyykkyyykkyyykkyyyykkkkk.p.",
     ".kykwwkykwwkykwwkyyykkkYYkp.",
+    "kyykwwkykwwkykwwkyyyykkYYkp.",
     ".kyykkyyykkyyykkyyyykkkYYkp.",
-    ".kkYYYYYYYYYYYYYYYYkkkkkk.p.",
-    "...kkYYYYYYYYYYYYkk..k....p.",
-    ".....kkkkkkkkkkkk...........",
+    ".kYYYYYYYYYYYYYYYYYYkkkkk.p.",
+    "..kkYYYYYYYYYYYYYYkk.k....p.",
+    "....kkYYYYYYYYYYkk..........",
+    "......kkkkkkkkkk............",
   ];
   const SUB_COLORS = { k:'#3a2a10', y:'#f2c230', Y:'#d29a18', h:'#ffe27a', w:'#9fe3ff', p:'#8a8f99' };
 
@@ -2145,13 +2154,18 @@
   }
 
   const sub = { el: document.getElementById('submarine'), x: 0, y: 0, vx: -0.45, t: 0 };
-  function subScale() { return Math.max(3, PS); }
+  function subScale() { return Math.max(4, PS + 1); }   // a bit bigger than the fish pixels
   function initSub() {
     drawSub(document.getElementById('subCanvas'), subScale());
     sub.w = SUB_SPRITE[0].length * subScale();
     sub.h = SUB_SPRITE.length * subScale();
     if (!sub.x) sub.x = areaW() * .7;
-    sub.baseY = titleBottom() + (areaH() - Math.round(areaH() * SAND_FRAC) - titleBottom()) * .55;
+    // cruise in the band where the tall background mountains meet the open water
+    const H = areaH(), sandTop = H - Math.round(H * SAND_FRAC);
+    const peakTop = sandTop - H * .44;                     // top of the tallest far mountains
+    sub.minY = Math.max(titleBottom() + 6, peakTop - sub.h * .6);
+    sub.maxY = Math.max(sub.minY, peakTop + sub.h * .4);
+    sub.baseY = (sub.minY + sub.maxY) / 2;
   }
   initSub();
 
@@ -2161,7 +2175,7 @@
       sub.x += sub.vx; sub.t += 0.02;
       if (sub.x < 6)             { sub.x = 6;             sub.vx =  Math.abs(sub.vx); }
       if (sub.x > W - sub.w - 6) { sub.x = W - sub.w - 6; sub.vx = -Math.abs(sub.vx); }
-      sub.y = sub.baseY + Math.sin(sub.t) * 10;           // gentle up-and-down drift
+      sub.y = sub.baseY + Math.sin(sub.t) * (sub.maxY - sub.minY) / 2;   // drift within the band
       sub.el.style.left = sub.x + 'px';
       sub.el.style.top  = sub.y + 'px';
       sub.el.querySelector('canvas').style.transform = sub.vx > 0 ? 'scaleX(-1)' : '';
@@ -2241,7 +2255,7 @@
     }
 
     // the submarine floats on the water, right of the beach
-    const sc = Math.max(3, PS + 1);
+    const sc = Math.max(5, PS + 2);
     drawSub(document.getElementById('shoreSubCanvas'), sc);
     const subEl = document.getElementById('shoreSub');
     subEl.style.left = (W * .58) + 'px';
@@ -2255,15 +2269,77 @@
     const sc = document.getElementById('shoreScene');
     sc.setAttribute('aria-hidden', 'false');
     sc.classList.add('show');
+    startGulls();
   }
   function diveBack() {
     const sc = document.getElementById('shoreScene');
     sc.classList.remove('show');
     sc.setAttribute('aria-hidden', 'true');
+    stopGulls();
+    // the submarine is waiting front-and-center when you land back in the tank
+    sub.x = areaW() / 2 - sub.w / 2;
+    sub.t = 0;
+    sub.el.classList.add('arrived');                       // pop in front of the fish for a moment
+    setTimeout(() => sub.el.classList.remove('arrived'), 3500);
+    getAC().resume().then(() => sfxBottle());
+  }
+
+  /* ── Seagulls: small V-shaped flocks that fly across the shore sky ── */
+  const GULL = [            // 9×4, wings up; the flap animation squashes it
+    ".kk...kk.",
+    "k..k.k..k",
+    "....k....",
+    "....w....",
+  ];
+  let gullTimer = null;
+  function gullCanvas(scale) {
+    const c = document.createElement('canvas');
+    c.width = GULL[0].length * scale; c.height = GULL.length * scale;
+    const ctx = c.getContext('2d');
+    GULL.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = ch === 'k' ? '#33415c' : '#ffffff';
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }));
+    return c;
+  }
+  function spawnFlock() {
+    const layer = document.getElementById('gullLayer');
+    const W = layer.clientWidth, H = layer.clientHeight;
+    const scale = Math.max(2, PS - 2);
+    const count = 3 + Math.floor(Math.random() * 3);          // 3–5 birds
+    const goRight = Math.random() < .5;
+    const flock = document.createElement('div'); flock.className = 'gull-flock';
+    for (let i = 0; i < count; i++) {                          // V shape: leader in front, others trailing
+      const side = i === 0 ? 0 : (i % 2 ? 1 : -1), rank = Math.ceil(i / 2);
+      const g = document.createElement('div'); g.className = 'gull';
+      g.style.left = (goRight ? -rank : rank) * 14 * scale + 'px';
+      g.style.top  = side * rank * 6 * scale + 'px';
+      const c = gullCanvas(scale);
+      c.style.animationDelay = (-Math.random() * .5) + 's';
+      g.appendChild(c); flock.appendChild(g);
+    }
+    layer.appendChild(flock);
+    const y = H * (.08 + Math.random() * .3);
+    const from = goRight ? -160 : W + 160, to = goRight ? W + 160 : -160;
+    flock.animate(
+      [{ transform: `translate(${from}px, ${y}px)` }, { transform: `translate(${to}px, ${y - 20 + Math.random() * 40}px)` }],
+      { duration: 9000 + Math.random() * 5000, easing: 'linear' }
+    ).onfinish = () => flock.remove();
+  }
+  function startGulls() {
+    stopGulls();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    setTimeout(spawnFlock, 600);
+    (function next() { gullTimer = setTimeout(() => { spawnFlock(); next(); }, 4000 + Math.random() * 5000); })();
+  }
+  function stopGulls() {
+    clearTimeout(gullTimer); gullTimer = null;
+    const layer = document.getElementById('gullLayer'); if (layer) layer.innerHTML = '';
   }
   document.getElementById('submarine').addEventListener('click', e => { e.stopPropagation(); surface(); });
   document.getElementById('shoreScene').addEventListener('click', e => e.stopPropagation());
-  document.getElementById('shoreBack').addEventListener('click', e => { e.stopPropagation(); diveBack(); });
+  document.getElementById('shoreSub').addEventListener('click', e => { e.stopPropagation(); diveBack(); });
 
 
   /* ══════════════════════════════════════════════════════════════
