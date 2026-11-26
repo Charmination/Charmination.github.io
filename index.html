@@ -1186,8 +1186,8 @@
           <h2>Hi, I'm Bonnie!</h2>
           <p>Welcome to my personal website!</p>
           <p>
-            I'm an undergraduate student at Princeton University majoring in
-            Electrical and Computer Engineering. I like to build and code in my
+            I'm an undergraduate student at Princeton University (Class of 2028)
+            majoring in Electrical and Computer Engineering. I like to build and code in my
             free time, play video games, and take care of my many aquariums.
           </p>
           <!-- Jumps straight to the Experience panel -->
@@ -2269,6 +2269,18 @@
   ];
   const GIRL_COLORS = { k:'#1b1a22', K:'#2c2a36', s:'#f2c49d', G:'#4f9a4a', g:'#3f8540', b:'#4a74b5', B:'#3a5f99', p:'#f7a6c4', P:'#e58ab0' };
 
+  const BOAT_SPRITE = [            // tiny sailboat far out at sea, sailing right
+    "....w.....",
+    "....ww....",
+    "....wWw...",
+    "....wwWw..",
+    "....wwwWw.",
+    "....k.....",
+    "hhhhhhhhhh",
+    ".hHhHhHhh.",
+  ];
+  const BOAT_COLORS = { w:'#ffffff', W:'#dceefa', k:'#5a3a22', h:'#a8452f', H:'#7e2f1f' };
+
   const shore = { running: false, t: 0 };
 
   function setupShore() {
@@ -2319,6 +2331,22 @@
     // ── clouds: each drifts at its own speed and wraps around ──
     shore.clouds = [[.12, .16, 1, .18], [.40, .27, .8, .12], [.62, .10, .6, .25], [.85, .22, .7, .15]]
       .map(([fx, fy, k, v]) => ({ x: W * fx, y: H * fy, w: W * .12 * k, v }));
+
+    // ── distant boat: starts near the horizon by the beach, sails right, then loops ──
+    const bs = Math.max(2, Math.round(B * .6));
+    const bc = document.createElement('canvas');
+    bc.width = BOAT_SPRITE[0].length * bs; bc.height = BOAT_SPRITE.length * bs;
+    const bx = bc.getContext('2d');
+    BOAT_SPRITE.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return; bx.fillStyle = BOAT_COLORS[ch]; bx.fillRect(x * bs, y * bs, bs, bs);
+    }));
+    shore.boat = {
+      img: bc,
+      startX: shoreX(0) + B * 8,                          // just past the foam at the far end of the beach
+      x: shoreX(0) + B * 8,
+      y: horizon + B * 2 - bc.height,                      // hull sitting right on the horizon
+      speed: Math.max(.15, W / 6000),                      // pixels per frame: very slow, it's far away
+    };
 
     // ── the girl, standing on dry sand a little back from the water ──
     const gs = Math.max(3, PS);
@@ -2384,6 +2412,12 @@
       const x = snap(((i * 173) % W) + Math.sin(t * .8 + i) * B * 2);
       if (x > shoreX((y - horizon) / seaH) + B * 3) ctx.fillRect(x, y, B * (2 + i % 3), B);
     }
+
+    // distant boat sailing right; once it leaves the frame it starts over by the beach
+    const boat = shore.boat;
+    boat.x += boat.speed;
+    if (boat.x > W + 10) boat.x = boat.startX;
+    ctx.drawImage(boat.img, Math.round(boat.x), Math.round(boat.y + Math.sin(t * 1.5) * .8));
 
     // ── waves: every ~5 s a wave rolls in, crashes, washes up the sand, and soaks in ──
     const PERIOD = 5.2;
@@ -3966,13 +4000,13 @@ the colors, and programming cues timed to the song.`,
     // catfish
     const catLayer = document.getElementById('catfishLayer');
     catLayer.innerHTML = '';
-    const cs = Math.max(3, PS);
+    const cs = Math.max(2, PS - 2);                       // same size as the other background swimmers
     const cv = spriteCanvas(CATFISH_SPRITE, CATFISH_COLORS, cs);
     catLayer.appendChild(cv);
     const prev = deco.catfish;
     deco.catfish = {
       cv, maxX: W - cv.width - 10,
-      baseY: sandTop - cv.height - cs * 10,                // cruising low, just above the seagrass tips
+      baseY: sandTop - cv.height - cs * 14,                // cruising low, just above the seagrass tips
       x: prev ? Math.min(prev.x, W - cv.width - 10) : W * .25,
       dir: prev ? prev.dir : 1, t: prev ? prev.t : 0,
       speed: Math.max(18, W / 45),                          // crosses the tank in ~45s
