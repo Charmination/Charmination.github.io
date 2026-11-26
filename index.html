@@ -379,6 +379,18 @@
     .shore-card-title { font-size: clamp(10px, 1.3vw, 14px); margin-bottom: 12px; color: #0a8f8a; letter-spacing: 2px; }
     .shore-card-text  { font-size: clamp(7px, .9vw, 10px); line-height: 2; }
 
+    /* ── Day/night clock in the bottom-right corner of the shore ── */
+    .shore-clock {
+      position: absolute; z-index: 3; right: 14px; bottom: 14px;
+      display: flex; align-items: center; gap: 7px; padding: 6px 10px 6px 7px;
+      font-family: 'Press Start 2P', monospace; font-size: clamp(7px, .85vw, 9px); color: #2b1d14;
+      background: #fff3e0; border: 2px solid #3a2414; border-radius: 8px; box-shadow: 0 3px 0 #3a2414;
+      cursor: pointer;
+    }
+    .shore-clock:active { transform: translateY(2px); box-shadow: 0 1px 0 #3a2414; }
+    .shore-clock canvas { display: block; image-rendering: pixelated; }
+    .shore-clock.night { background: #1d2c5c; color: #fcf4af; border-color: #0b1433; box-shadow: 0 3px 0 #0b1433; }
+
     /* ── Talking to Bonnie: a video-game style dialogue box along the bottom ── */
     .bonnie-dialog {
       display: none; position: absolute; z-index: 5; left: 50%; bottom: 14px; transform: translateX(-50%);
@@ -1374,6 +1386,11 @@
       <div class="shore-spot" id="lighthouseSpot" role="button" aria-label="Lighthouse">
         <span class="fish-label">Lighthouse</span>
       </div>
+
+      <!-- Little clock: switches the shore between day and night -->
+      <button class="shore-clock" id="shoreClock" type="button" aria-label="Switch to night">
+        <canvas id="clockIcon"></canvas><span id="clockLabel">Day</span>
+      </button>
 
       <!-- Lighthouse pop-up (placeholder until we decide what it does) -->
       <div class="shore-card" id="lighthouseCard">
@@ -2429,7 +2446,9 @@
     const ls = Math.max(2, Math.round(PS * .5));                  // small: it's far away
     const lhW = LIGHTHOUSE_SPRITE[0].length * ls, lhH = LIGHTHOUSE_SPRITE.length * ls;
     const lhX = Math.round(hillPeakX - lhW / 2), lhY = horizon + B - lhH;   // standing on the back of the beach
-    paintSprite(g, LIGHTHOUSE_SPRITE, LIGHTHOUSE_COLORS, lhX, lhY, ls);
+    const lhc = document.createElement('canvas'); lhc.width = lhW; lhc.height = lhH;
+    paintSprite(lhc.getContext('2d'), LIGHTHOUSE_SPRITE, LIGHTHOUSE_COLORS, 0, 0, ls);
+    shore.lh = { img: lhc, x: lhX, y: lhY };              // drawn every frame, in front of the sky
     shore.lamp = { x: lhX + 5.5 * ls, y: lhY + 4.5 * ls, s: ls };   // where the light shines from
     Object.assign(document.getElementById('lighthouseSpot').style, {
       left: (lhX - ls * 3) + 'px', top: (lhY - ls * 3) + 'px',     // a bit of padding: easier to tap
@@ -2442,6 +2461,22 @@
                 snap(W * .03), snap(H * .96) - SANDCASTLE_SPRITE.length * cs, cs);
 
     shore.bg = bg;
+
+    // ── night version of the sky (only used when the clock says "Night") ──
+    const night = document.createElement('canvas'); night.width = W; night.height = horizon;
+    const ng = night.getContext('2d');
+    ['#0b1433', '#101a3f', '#16224c', '#1c2a59', '#233466', '#2b3e73'].forEach((col, i, a) => {
+      ng.fillStyle = col; ng.fillRect(0, snap(horizon * i / a.length), W, snap(horizon / a.length) + B);
+    });
+    const sandW = snap(shoreX(0)) + B;                     // keep the strip of beach that pokes above the horizon
+    ng.drawImage(bg, 0, horizon - B * 2, sandW, B * 2, 0, horizon - B * 2, sandW, B * 2);
+    shore.nightSky = night;
+    shore.stars = Array.from({ length: 70 }, (_, i) => ({
+      x: snap(((i * 211) % 997) / 997 * W),
+      y: snap(((i * 137) % 991) / 991 * (horizon - B * 4)),
+      big: i % 7 === 0,                                    // a few brighter stars
+      phase: i * 1.3,
+    }));
 
     // crab on the shore (drawn each frame so it can move)
     const crs = Math.max(2, PS - 2);
@@ -2462,6 +2497,18 @@
       }
     }
     shore.sunDisc = sd;
+
+    // moon: pale disc with a few craters, in the sun's spot
+    const md = document.createElement('canvas'), mr = shore.sun.r * .8;
+    md.width = md.height = Math.ceil(mr * 2 + B * 2);
+    const mg = md.getContext('2d');
+    for (let y = -mr; y <= mr; y += B) for (let x = -mr; x <= mr; x += B) {
+      if (x * x + y * y > mr * mr) continue;
+      const crater = (Math.hypot(x + mr * .3, y + mr * .2) < mr * .22) || (Math.hypot(x - mr * .35, y - mr * .3) < mr * .15);
+      mg.fillStyle = crater ? '#d9d5b4' : '#f6f2d4';
+      mg.fillRect(Math.floor((x + mr) / B) * B, Math.floor((y + mr) / B) * B, B, B);
+    }
+    shore.moon = { img: md, r: mr };
 
     // ── clouds: each drifts at its own speed and wraps around ──
     shore.clouds = [[.12, .16, 1, .18], [.40, .27, .8, .12], [.62, .10, .6, .25], [.85, .22, .7, .15]]
@@ -2515,6 +2562,24 @@
     const t = shore.t;
     ctx.drawImage(shore.bg, 0, 0);
 
+    if (shore.night) {
+      // night: dark sky, twinkling stars, and the moon where the sun was
+      ctx.drawImage(shore.nightSky, 0, 0);
+      shore.stars.forEach(st => {
+        ctx.globalAlpha = .35 + .65 * (0.5 + 0.5 * Math.sin(t * 1.8 + st.phase));
+        ctx.fillStyle = st.big ? '#fff6c8' : '#ffffff';
+        ctx.fillRect(st.x, st.y, st.big ? B : Math.max(2, B / 2), st.big ? B : Math.max(2, B / 2));
+      });
+      // soft round glow: two faint pixel rings around the moon
+      [[1.6, .07], [1.3, .10]].forEach(([k, alpha]) => {
+        const gr = shore.moon.r * k;
+        ctx.globalAlpha = alpha; ctx.fillStyle = '#f6f2d4';
+        for (let y = -gr; y <= gr; y += B) for (let x = -gr; x <= gr; x += B)
+          if (x * x + y * y <= gr * gr) ctx.fillRect(snap(sun.x + x), snap(sun.y + y), B, B);
+      });
+      ctx.globalAlpha = 1;
+      ctx.drawImage(shore.moon.img, sun.x - shore.moon.r, sun.y - shore.moon.r);
+    } else {
     // sun rays: rectangles pointing out from the sun, slowly circling and blinking
     const RAYS = 10;
     for (let i = 0; i < RAYS; i++) {
@@ -2529,6 +2594,10 @@
     }
     ctx.globalAlpha = 1;
     ctx.drawImage(shore.sunDisc, sun.x - sun.r, sun.y - sun.r);
+    }   // end of day sky
+
+    // lighthouse at the far end of the beach
+    ctx.drawImage(shore.lh.img, shore.lh.x, shore.lh.y);
 
     // lighthouse: the lamp blinks, and a soft beam sweeps back and forth
     const lamp = shore.lamp;
@@ -2542,10 +2611,10 @@
     // clouds drift right and wrap around
     shore.clouds.forEach(cl => {
       cl.x += cl.v; if (cl.x > W + 20) cl.x = -cl.w - 20;
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = shore.night ? '#56638a' : '#ffffff';     // clouds turn grey-blue at night
       ctx.fillRect(snap(cl.x), snap(cl.y), snap(cl.w), B * 2);
       ctx.fillRect(snap(cl.x + cl.w * .2), snap(cl.y) - B * 2, snap(cl.w * .5), B * 2);
-      ctx.fillStyle = '#e3f2ff';
+      ctx.fillStyle = shore.night ? '#3f4a6e' : '#e3f2ff';
       ctx.fillRect(snap(cl.x), snap(cl.y) + B * 2, snap(cl.w), B);
     });
 
@@ -2734,6 +2803,36 @@
     e.stopPropagation();
     closeBonnie();
     document.getElementById('lighthouseCard').classList.remove('show');
+  });
+
+  // day/night clock: a tiny pixel clock face, and a button that flips the sky
+  const CLOCK_SPRITE = [
+    "..kkkkk..",
+    ".kwwwwwk.",
+    "kwwwkwwwk",
+    "kwwwkwwwk",
+    "kwwwkkkwk",
+    "kwwwwwwwk",
+    "kwwwwwwwk",
+    ".kwwwwwk.",
+    "..kkkkk..",
+  ];
+  function drawClockIcon(isNight) {
+    const c = document.getElementById('clockIcon'), sc = 2;
+    c.width = c.height = 9 * sc;
+    const cols = isNight ? { k:'#fcf4af', w:'#2b3e73' } : { k:'#3a2414', w:'#ffe680' };
+    paintSprite(c.getContext('2d'), CLOCK_SPRITE, cols, 0, 0, sc);
+  }
+  drawClockIcon(false);
+  document.getElementById('shoreClock').addEventListener('click', e => {
+    e.stopPropagation();
+    shore.night = !shore.night;
+    const btn = e.currentTarget;
+    btn.classList.toggle('night', shore.night);
+    document.getElementById('clockLabel').textContent = shore.night ? 'Night' : 'Day';
+    btn.setAttribute('aria-label', shore.night ? 'Switch to day' : 'Switch to night');
+    drawClockIcon(shore.night);
+    if (!shore.running) drawShoreFrame();
   });
 
   // lighthouse (placeholder card for now)
