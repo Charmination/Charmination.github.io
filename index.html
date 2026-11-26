@@ -865,6 +865,22 @@
       -webkit-appearance: none; appearance: none; box-shadow: none;
     }
 
+    /* Hover title for the chest and clam, styled like the fish labels.
+       Drawn with ::after so it survives the chest/clam being rebuilt on open/close.
+       The text comes from each button's data-label attribute. */
+    .floor-obj::after {
+      content: attr(data-label);
+      position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%);
+      background: rgba(7,50,46,.88); color: #fcf4af;
+      font-size: clamp(7px, 1vw, 10px);
+      padding: 5px 10px; border-radius: 5px;
+      white-space: nowrap; pointer-events: none; opacity: 0;
+      transition: opacity .2s;
+      font-family: 'Press Start 2P', monospace; z-index: 100;
+      border: 1.5px solid rgba(135,255,221,.4);
+    }
+    .floor-obj:hover::after { opacity: 1; }
+
 
     /* ════════════════════════════════════════════════
        BOTTOM BAR — feed button + hint text
@@ -1057,7 +1073,7 @@
     <span class="lamp-pull" id="lampPull">
       <span class="lamp-string"></span>
       <span class="lamp-bead"></span>
-      <span class="lamp-tag" id="lampLabel">Click me (on)</span>
+      <span class="lamp-tag" id="lampLabel">Click me</span>
     </span>
   </button>
 
@@ -1132,10 +1148,10 @@
          ───────────────────────────────────────────── -->
 
     <!-- Treasure chest (right side of tank) — opens photo gallery -->
-    <button class="floor-obj" id="chestBtn" aria-label="Open treasure chest"></button>
+    <button class="floor-obj" id="chestBtn" data-label="Treasure Chest" aria-label="Open treasure chest"></button>
 
     <!-- Giant clam (left side of tank) — opens pearl of wisdom -->
-    <button class="floor-obj" id="clamBtn" aria-label="Open clam"></button>
+    <button class="floor-obj" id="clamBtn" data-label="Contact Clam" aria-label="Open clam"></button>
 
     <!-- Message-in-a-bottle (between clam and chest) — opens feedback form -->
     <button id="bottleBtn" aria-label="Leave a message">
@@ -2686,7 +2702,6 @@
     const lamp = document.getElementById('lampBtn');
     lamp.classList.toggle('off', dark);
     lamp.setAttribute('aria-label', dark ? 'Turn the aquarium light on' : 'Turn the aquarium light off');
-    document.getElementById('lampLabel').textContent = dark ? 'Click me (off)' : 'Click me (on)';
     // tug the pull string down for a moment
     const pull = document.getElementById('lampPull');
     pull.classList.add('pulled');
