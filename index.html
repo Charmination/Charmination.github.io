@@ -367,6 +367,9 @@
        (Bonnie Pixel and the lighthouse). They show a hover label like the fish. */
     .shore-spot { position: absolute; z-index: 3; cursor: pointer; }
     .shore-spot:hover .fish-label { opacity: 1; }
+    /* the castle and lighthouse sit near the left edge, so their labels start at
+       the object's left side and stretch right instead of hanging off-screen */
+    #castleSpot .fish-label, #lighthouseSpot .fish-label { left: 0; transform: none; }
 
     /* Small pop-up card on the shore (used by the lighthouse for now) */
     .shore-card {
@@ -3075,15 +3078,22 @@
      HOW TO ADD MORE CONVERSATION:
        Every "node" below is one thing Bonnie says.
          text:    what she says (a function gets the visitor's name, or '')
-         choices: [button text, node to go to next]
+         choices: a function giving [button text, node to go to next]
          askName: show a name box instead of buttons
+         action:  'cast' closes the box and casts her line
          end:     close the box a moment after she finishes talking
        Add a new node, then point a choice at it.
      ══════════════════════════════════════════════════════════════ */
+  // Is Bonnie's line in the water right now? (FISH casts it, REEL brings it back)
+  const lineIsOut = () => fishing.state === 'cast' || fishing.state === 'casting';
+  const catchNote = () => fishing.caught ? ` I've caught ${fishing.caught} thing${fishing.caught === 1 ? '' : 's'} so far!` : '';
+
   const DIALOGUE = {
     start: {
-      text: n => n ? `Oh, hi again, ${n}!` : '(Bonnie is watching her bobber very closely.)',
-      choices: [['Hi!', 'hi'], ["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+      text: n => n ? `Oh, hi again, ${n}!`
+               : lineIsOut() ? '(Bonnie is watching her bobber very closely.)'
+               : '(Bonnie is gazing out at the ocean.)',
+      choices: () => [['Hi!', 'hi'], ["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
     },
     hi: {
       text: () => "Hi! I'm Bonnie! What's your name?",
@@ -3091,23 +3101,32 @@
     },
     hiAgain: {                                            // used when she already knows your name
       text: n => `Hi, ${n}! I still remember your name.`,
-      choices: [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+      choices: () => [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
     },
     named: {
       text: n => `Nice to meet you, ${n}! Want to know what I'm up to?`,
-      choices: [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+      choices: () => [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
     },
     shy: {
       text: () => "That's okay, mystery friend!",
-      choices: [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
+      choices: () => [["Whatcha doin'?", 'doing'], ['Bye!', 'bye']],
     },
     doing: {
-      text: () => "Fishing! Nothing's biting yet, but my bobber keeps wiggling.",
-      choices: [['Good luck!', 'luck'], ['Hi!', 'hi'], ['Bye!', 'bye']],
+      // her answer depends on whether her line is in the water
+      text: () => lineIsOut()
+        ? "Fishing! I'm waiting for the bobber to dip." + catchNote()
+        : 'Just enjoying the ocean breeze. Want me to go fishing?' + catchNote(),
+      choices: () => lineIsOut()
+        ? [['Good luck!', 'luck'], ['Bye!', 'bye']]
+        : [["Let's fish!", 'goFish'], ['Bye!', 'bye']],
     },
     luck: {
-      text: () => 'Thanks! Come back later and see what I catch.',
-      choices: [['Bye!', 'bye']],
+      text: () => 'Thanks! Press REEL right when the bobber dips. That is when something is on the hook.',
+      choices: () => [['Bye!', 'bye']],
+    },
+    goFish: {                                             // she closes the chat and casts her line
+      text: () => 'Okay, here goes!',
+      action: 'cast',
     },
     bye: {
       text: n => `See you later${n ? ', ' + n : ''}!`,
@@ -3173,7 +3192,9 @@
     typeText(node.text(visitorName), () => {
       if (node.askName) showNameBox();
       else if (node.end) closeTimer = setTimeout(closeBonnie, 1400);
-      else node.choices.forEach(([label, next]) => bdChoices.append(choiceButton(label, () => goTo(next))));
+      else if (node.action === 'cast')                     // "Let's fish!": close the chat, then cast
+        closeTimer = setTimeout(() => { closeBonnie(); if (fishing.state === 'idle') fishBtn.click(); }, 700);
+      else node.choices().forEach(([label, next]) => bdChoices.append(choiceButton(label, () => goTo(next))));
     });
   }
 
