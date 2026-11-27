@@ -1531,6 +1531,76 @@
   }
 
   // Sound effects for each interactive object
+
+  // ── Shore + X-button sounds (all made from tones and noise, no audio files) ──
+
+  // X buttons: a short, crisp "tick" like an old mouse click
+  function sfxClick() {
+    playNoise(.025, .16, 3800);
+    playTone(1800, 'square', .03, .035, .001);
+  }
+
+  // Lighthouse: a magical rising sparkle with a soft shimmering pad underneath
+  function sfxLighthouse() {
+    [784, 988, 1175, 1568, 1976, 2349].forEach((f, i) =>
+      setTimeout(() => playTone(f, 'sine', .5, .06, .004), i * 70));
+    playTone(392, 'triangle', 1.1, .05, .25);                 // the glow
+    setTimeout(() => playTone(2637, 'sine', .8, .035, .01), 450);   // final twinkle
+  }
+
+  // Sandcastle: a few soft sandy shuffles and a gentle pat
+  function sfxSandcastle() {
+    [0, 60, 130, 210, 280].forEach((t, i) =>
+      setTimeout(() => playNoise(.09 + Math.random() * .05, .09, 700 + i * 120), t));
+    setTimeout(() => playTone(140, 'sine', .12, .08, .004), 330);
+  }
+
+  // Bonnie: a sweet little two-note chime, like a cheerful "hi!"
+  function sfxBonnie() {
+    playTone(988, 'triangle', .25, .09, .005);
+    setTimeout(() => playTone(1319, 'triangle', .45, .09, .005), 120);
+    setTimeout(() => playTone(2637, 'sine', .3, .025, .005), 120);   // sparkle on top
+  }
+
+  // Sailboat: a wave washing in and out (noise that swells up, then fades away)
+  function sfxWave() {
+    const ac = getAC(), dur = 1.8;
+    const buf = ac.createBuffer(1, ac.sampleRate * dur, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource(), flt = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = buf; flt.type = 'lowpass';
+    const now = ac.currentTime;
+    flt.frequency.setValueAtTime(300, now);
+    flt.frequency.linearRampToValueAtTime(1800, now + .7);     // the wave rushes in
+    flt.frequency.linearRampToValueAtTime(400, now + dur);     // and drains back out
+    g.gain.setValueAtTime(.0001, now);
+    g.gain.linearRampToValueAtTime(.14, now + .6);
+    g.gain.exponentialRampToValueAtTime(.0001, now + dur);
+    src.connect(flt); flt.connect(g); g.connect(ac.destination);
+    src.start(); src.stop(now + dur + .05);
+  }
+
+  // FISH / REEL button: a cartoony "glug glug glug" drinking sound
+  function sfxGulp() {
+    const ac = getAC();
+    [0, .16, .32].forEach((t, i) => setTimeout(() => {
+      const o = ac.createOscillator(), g = ac.createGain(), now = ac.currentTime;
+      o.connect(g); g.connect(ac.destination);
+      o.type = 'sine';
+      o.frequency.setValueAtTime(520 - i * 30, now);
+      o.frequency.exponentialRampToValueAtTime(170 - i * 10, now + .09);   // the pitch drops: "glug"
+      g.gain.setValueAtTime(.0001, now);
+      g.gain.linearRampToValueAtTime(.2, now + .012);
+      g.gain.exponentialRampToValueAtTime(.0001, now + .11);
+      o.start(); o.stop(now + .14);
+    }, t * 1000));
+    setTimeout(() => playTone(880, 'sine', .15, .05, .01), 520);     // a happy little "ahh"
+  }
+
+  // Every X button on the site clicks. (Capture phase, so it plays even when a
+  // close button stops the click from going any further.)
+  document.addEventListener('click', e => { if (e.target.closest('.ov-close')) sfxClick(); }, true);
   function sfxChestOpen()  { const ac=getAC();[{f:330,t:0,d:.08},{f:440,t:.09,d:.12}].forEach(n=>{setTimeout(()=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='triangle';o.frequency.value=n.f;g.gain.setValueAtTime(.18,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+n.d);o.start();o.stop(ac.currentTime+n.d+.02);playNoise(n.d,.06,180);},n.t*1000);});setTimeout(()=>playTone(1400,'sine',.1,.07,.003),200);setTimeout(()=>playTone(1600,'sine',.08,.06,.003),270); }
   function sfxChestClose() { const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='triangle';o.frequency.setValueAtTime(300,ac.currentTime);o.frequency.exponentialRampToValueAtTime(180,ac.currentTime+.1);g.gain.setValueAtTime(.16,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.12);o.start();o.stop(ac.currentTime+.16);playNoise(.1,.07,200); }
   function sfxClamOpen()   { playNoise(.2,.07,500);[0,.07,.15,.22].forEach((t,i)=>setTimeout(()=>playTone(800+i*250,'sine',.18,.07,.004),t*1000));setTimeout(()=>playTone(1900,'sine',.55,.1,.008),300); }
@@ -2925,6 +2995,7 @@
     document.getElementById('clockLabel').textContent = shore.night ? 'Night' : 'Day';
     btn.setAttribute('aria-label', shore.night ? 'Switch to day' : 'Switch to night');
     drawClockIcon(shore.night);
+    if (shore.night) sfxLampOff(); else sfxLampOn();      // same click as the Tiffany lamp
     if (!shore.running) drawShoreFrame();
   });
 
@@ -3009,12 +3080,12 @@
   }
 
   fishBtn.addEventListener('click', () => {
+    if (fishing.state === 'idle' || fishing.state === 'cast') sfxGulp();   // glug glug glug
     if (fishing.state === 'idle') {                          // FISH: cast the line out
       closeShoreCards();
       fishing.dangle = null;
       setFishState('casting', .9);
       fishBtn.disabled = true;
-      getAC().resume().then(() => sfxBottle());
       setTimeout(() => { setFishState('cast'); fishBtn.textContent = 'REEL'; fishBtn.disabled = false; }, 900);
     } else if (fishing.state === 'cast') {                   // REEL: pull it in and see what bit
       const c = rollCatch(fishingNibble(shore.t));
@@ -3059,10 +3130,13 @@
   const catchCard = document.getElementById('catchCard');
   catchCard.addEventListener('click', e => e.stopPropagation());
   catchCard.querySelector('.ov-close').addEventListener('click', e => { e.stopPropagation(); catchCard.classList.remove('show'); });
-  [['lighthouseSpot', 'lighthouseCard'], ['castleSpot', 'castleCard'], ['boatSpot', 'boatCard']].forEach(([spotId, cardId]) => {
+  [['lighthouseSpot', 'lighthouseCard', sfxLighthouse],
+   ['castleSpot',     'castleCard',     sfxSandcastle],
+   ['boatSpot',       'boatCard',       sfxWave]].forEach(([spotId, cardId, sound]) => {
     const card = document.getElementById(cardId);
     document.getElementById(spotId).addEventListener('click', e => {
       e.stopPropagation(); closeBonnie(); closeShoreCards(); card.classList.add('show');
+      sound();
     });
     card.addEventListener('click', e => e.stopPropagation());
     card.querySelector('.ov-close').addEventListener('click', e => { e.stopPropagation(); card.classList.remove('show'); });
@@ -3209,7 +3283,7 @@
     bonnieDialog.classList.remove('show');
   }
 
-  document.getElementById('bonnieSpot').addEventListener('click', e => { e.stopPropagation(); openBonnie(); });
+  document.getElementById('bonnieSpot').addEventListener('click', e => { e.stopPropagation(); sfxBonnie(); openBonnie(); });
   bonnieDialog.addEventListener('click', e => e.stopPropagation());
   document.getElementById('bonnieClose').addEventListener('click', e => { e.stopPropagation(); closeBonnie(); });
   document.getElementById('shoreSub').addEventListener('click', e => { e.stopPropagation(); diveBack(); });
