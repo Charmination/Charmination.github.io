@@ -3110,50 +3110,52 @@
     fishBtn.textContent = 'FISH'; fishBtn.disabled = false;
   }
 
-  /* ── Coursework Castle: the courses taken so far ──
-     To add a course, add a line under the right term (newest term first). */
+  /* ── Coursework Castle: every course, grouped by subject ──
+     To add a course, add a line under the subject it belongs to. */
   const COURSEWORK = [
-    { term: 'Fall 2026 (In Progress)', courses: [
-      ['ASA 351', 'Race, Space and Place in Asian America'],
-      ['COM 200', 'Who Are You Really? Life/Lit/Internet'],
-      ['COS 324', 'Introduction to Machine Learning'],
-      ['ECE 302', 'Robotic and Autonomous Systems Lab'],
-      ['MAE 305', 'Mathematics in Engineering I'],
-      ['PHI 341', 'Love & Respect in Philosophy and Literature'],
-    ] },
-    { term: 'Summer 2026 (Rutgers University)', courses: [
-      ['MAT 201', 'Multivariable Calculus'],
-    ] },
-    { term: 'Spring 2026', courses: [
-      ['ASA 201', 'Introduction to Asian American Studies'],
+    { group: 'Electrical & Computer Engineering', courses: [
+      ['ECE 115', 'Introduction to Computing'],
       ['ECE 201', 'Information Signals'],
       ['ECE 203', 'Electronic Circuit Design'],
-      ['THR 318', 'Lighting Design'],
-    ] },
-    { term: 'Fall 2025', courses: [
-      ['COS 226', 'Algorithms and Data Structures'],
       ['ECE 206', 'Contemporary Logic Design'],
-      ['LAO 361', 'Watering Time: Visualizing Puerto Rico'],
-      ['REL 263', 'Religion and its Modern Critics'],
+      ['ECE 302', 'Robotic and Autonomous Systems Lab'],
     ] },
-    { term: 'Spring 2025', courses: [
-      ['AST 203', 'The Universe'],
-      ['CHI 108', 'Intensive Intermediate Chinese'],
-      ['EGR 153', 'Foundations of Engineering: Electricity, Magnetism, and Photonics'],
+    { group: 'Computer Science', courses: [
+      ['COS 226', 'Algorithms and Data Structures'],
+      ['COS 324', 'Introduction to Machine Learning'],
+    ] },
+    { group: 'Math', courses: [
+      ['EGR 152', 'Foundations: Mathematics of Shape and Motion'],
       ['EGR 154', 'Linear Systems'],
+      ['MAT 201', 'Multivariable Calculus'],
+      ['MAE 305', 'Mathematics in Engineering I'],
+    ] },
+    { group: 'Physics & Astronomy', courses: [
+      ['EGR 151', 'Foundations: Mechanics, Energy and Waves'],
+      ['EGR 153', 'Foundations of Engineering: Electricity, Magnetism, and Photonics'],
+      ['AST 203', 'The Universe'],
+    ] },
+    { group: 'Humanities & Social Sciences', courses: [
+      ['ASA 201', 'Introduction to Asian American Studies'],
+      ['ASA 351', 'Race, Space and Place in Asian America'],
+      ['COM 200', 'Who Are You Really? Life/Lit/Internet'],
+      ['LAO 361', 'Watering Time: Visualizing Puerto Rico'],
+      ['PHI 341', 'Love & Respect in Philosophy and Literature'],
+      ['REL 263', 'Religion and its Modern Critics'],
       ['WRI 114', 'Writing Seminar'],
     ] },
-    { term: 'Fall 2024', courses: [
+    { group: 'Languages', courses: [
       ['CHI 103', 'Intensive Elementary Chinese'],
-      ['ECE 115', 'Introduction to Computing'],
-      ['EGR 151', 'Foundations: Mechanics, Energy and Waves'],
-      ['EGR 152', 'Foundations: Mathematics of Shape and Motion'],
+      ['CHI 108', 'Intensive Intermediate Chinese'],
+    ] },
+    { group: 'Arts', courses: [
+      ['THR 318', 'Lighting Design'],
     ] },
   ];
   document.getElementById('courseList').innerHTML = !COURSEWORK.length
     ? '<div class="course-item" style="text-align:center">Under construction. Courses coming soon!</div>'
     : COURSEWORK.map(t =>
-    `<div class="course-term">${t.term}</div>` +
+    `<div class="course-term">${t.group}</div>` +
     t.courses.map(([code, name]) => `<div class="course-item"><b>${code}</b> · ${name}</div>`).join('')
   ).join('');
 
