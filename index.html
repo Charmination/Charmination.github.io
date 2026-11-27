@@ -1548,11 +1548,19 @@
     setTimeout(() => playTone(2637, 'sine', .8, .035, .01), 450);   // final twinkle
   }
 
-  // Sandcastle: a few soft sandy shuffles and a gentle pat
+  // Sandcastle: flipping a bucket of sand — a soft hollow "thunk", then a little "ta-da!"
   function sfxSandcastle() {
-    [0, 60, 130, 210, 280].forEach((t, i) =>
-      setTimeout(() => playNoise(.09 + Math.random() * .05, .09, 700 + i * 120), t));
-    setTimeout(() => playTone(140, 'sine', .12, .08, .004), 330);
+    const ac = getAC(), o = ac.createOscillator(), g = ac.createGain(), now = ac.currentTime;
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(220, now);
+    o.frequency.exponentialRampToValueAtTime(90, now + .12);   // hollow bucket thunk
+    g.gain.setValueAtTime(.0001, now);
+    g.gain.linearRampToValueAtTime(.2, now + .01);
+    g.gain.exponentialRampToValueAtTime(.0001, now + .16);
+    o.start(); o.stop(now + .2);
+    setTimeout(() => playTone(659, 'triangle', .14, .08, .005), 200);   // ta-
+    setTimeout(() => playTone(988, 'triangle', .35, .08, .005), 320);   // da!
   }
 
   // Bonnie: a sweet little two-note chime, like a cheerful "hi!"
@@ -2961,12 +2969,8 @@
     const layer = document.getElementById('gullLayer'); if (layer) layer.innerHTML = '';
   }
   document.getElementById('submarine').addEventListener('click', e => { e.stopPropagation(); surface(); });
-  // clicking empty shore closes whatever pop-up is open
-  document.getElementById('shoreScene').addEventListener('click', e => {
-    e.stopPropagation();
-    closeBonnie();
-    closeShoreCards();
-  });
+  // clicks on the shore stay on the shore (and don't close anything: only X buttons do)
+  document.getElementById('shoreScene').addEventListener('click', e => e.stopPropagation());
 
   // day/night clock: a tiny pixel clock face, and a button that flips the sky
   const CLOCK_SPRITE = [
@@ -3135,7 +3139,9 @@
    ['boatSpot',       'boatCard',       sfxWave]].forEach(([spotId, cardId, sound]) => {
     const card = document.getElementById(cardId);
     document.getElementById(spotId).addEventListener('click', e => {
-      e.stopPropagation(); closeBonnie(); closeShoreCards(); card.classList.add('show');
+      e.stopPropagation();
+      if (card.classList.contains('show')) return;         // already open: ignore until it's closed
+      closeBonnie(); closeShoreCards(); card.classList.add('show');
       sound();
     });
     card.addEventListener('click', e => e.stopPropagation());
@@ -3283,7 +3289,11 @@
     bonnieDialog.classList.remove('show');
   }
 
-  document.getElementById('bonnieSpot').addEventListener('click', e => { e.stopPropagation(); sfxBonnie(); openBonnie(); });
+  document.getElementById('bonnieSpot').addEventListener('click', e => {
+    e.stopPropagation();
+    if (bonnieDialog.classList.contains('show')) return;   // already chatting: ignore
+    sfxBonnie(); openBonnie();
+  });
   bonnieDialog.addEventListener('click', e => e.stopPropagation());
   document.getElementById('bonnieClose').addEventListener('click', e => { e.stopPropagation(); closeBonnie(); });
   document.getElementById('shoreSub').addEventListener('click', e => { e.stopPropagation(); diveBack(); });
@@ -3428,9 +3438,9 @@
   Object.entries(FISH_PAGES).forEach(([fishId, panelId]) => {
     document.getElementById(fishId).addEventListener('click', e => {
       e.stopPropagation();
-      getAC().resume().then(() => sfxFishBloop(fishId));
       const panel = document.getElementById(panelId);
-      if (panel.classList.contains('show')) { closePanel(panelId); return; }
+      if (panel.classList.contains('show')) return;        // already open: only its X closes it
+      getAC().resume().then(() => sfxFishBloop(fishId));
       openPanel(panelId);
     });
   });
@@ -3478,11 +3488,11 @@
   /* ── BOTTLE (opens feedback overlay) ── */
   document.getElementById('bottleBtn').addEventListener('click', e => {
     e.stopPropagation();
-    sfxBottle();
     const fo = document.getElementById('feedbackOverlay');
-    const was = fo.classList.contains('show');
+    if (fo.classList.contains('show')) return;             // already open: only its X closes it
+    sfxBottle();
     closeAll();
-    if (!was) { posOverlay(fo); fo.classList.add('show'); }
+    posOverlay(fo); fo.classList.add('show');
   });
   document.getElementById('feedbackOverlay').addEventListener('click', e => e.stopPropagation());
   document.getElementById('fbClose').addEventListener('click', e => {
@@ -3499,11 +3509,12 @@
 
   // FEED opens the feedback form. Food only drops once a message is SENT.
   document.getElementById('feedBtn').addEventListener('click', e => {
-    e.stopPropagation(); sfxFeed();
+    e.stopPropagation();
     const fo = document.getElementById('feedbackOverlay');
-    const was = fo.classList.contains('show');
+    if (fo.classList.contains('show')) return;             // already open: only its X closes it
+    sfxFeed();
     closeAll();
-    if (!was) { posOverlay(fo); fo.classList.add('show'); }
+    posOverlay(fo); fo.classList.add('show');
   });
 
   // Drop one pellet; a random fish (not already chasing one) swims over and eats it
@@ -3596,16 +3607,13 @@
   /* ── CHEST (opens the grid of boxes) ── */
   document.getElementById('chestBtn').addEventListener('click', e => {
     e.stopPropagation();
-    const newOpen = !chestOpen;
-    if (newOpen) sfxChestOpen(); else sfxChestClose();
-    setChestOpen(newOpen);
-    if (newOpen) {
-      closeNavPopups(); closeAllPanels(); closeSmallOverlays();
-      document.getElementById('galleryPanel').classList.add('show');
-      renderChestGrid();
-    } else {
-      document.getElementById('galleryPanel').classList.remove('show');
-    }
+    if (chestOpen) return;                                 // already open: only its X closes it
+    sfxChestOpen();
+    setChestOpen(true);
+    closeNavPopups(); closeAllPanels(); closeSmallOverlays();
+    if (clamOpen) setClamOpen(false);                      // switching over from the clam
+    document.getElementById('galleryPanel').classList.add('show');
+    renderChestGrid();
   });
   document.getElementById('galleryPanel').addEventListener('click', e => e.stopPropagation());
   document.getElementById('galClose').addEventListener('click', e => {
@@ -3632,12 +3640,12 @@
   // Clam click: toggle open/closed + show/hide pearl overlay
   document.getElementById('clamBtn').addEventListener('click', e => {
     e.stopPropagation();
-    const newOpen = !clamOpen;
-    if (newOpen) sfxClamOpen(); else sfxClamClose();
-    setClamOpen(newOpen);
+    if (clamOpen) return;                                  // already open: only its X closes it
+    sfxClamOpen();
+    setClamOpen(true);
+    if (chestOpen) setChestOpen(false);                    // switching over from the chest
     const po = document.getElementById('pearlOverlay');
-    if (newOpen) { closeNavPopups(); closeAllPanels(); closeSmallOverlays(); posOverlay(po); po.classList.add('show'); }
-    else         { po.classList.remove('show'); }
+    closeNavPopups(); closeAllPanels(); closeSmallOverlays(); posOverlay(po); po.classList.add('show');
   });
   document.getElementById('pearlOverlay').addEventListener('click', e => e.stopPropagation());
   document.getElementById('pearlClose').addEventListener('click', e => {
@@ -4473,9 +4481,9 @@ the colors, and programming cues timed to the song.`,
 
 
   /* ══════════════════════════════════════════════════════════════
-     GLOBAL CLICK — clicking anywhere outside panels closes everything
+     NOTE: clicking outside a pop-up does NOT close it.
+     The only way out of any window with an X is the X button.
      ══════════════════════════════════════════════════════════════ */
-  document.addEventListener('click', () => closeAll());
 
 
   /* ══════════════════════════════════════════════════════════════
